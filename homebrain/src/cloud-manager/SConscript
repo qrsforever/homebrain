@@ -1,0 +1,22 @@
+##
+# cloud manager base build script
+##
+
+import os
+Import('homebrain_env')
+
+cloud_env = homebrain_env.Clone()
+
+cloud_env.AppendUnique(CPPPATH = [
+    '.',
+    '../device-manager/include',
+    '../rule-engine/RuleDriver/src',
+    '../utils/Log/src',
+])
+
+lecloud_lib_src = [
+    'HBCloudManager.cpp'
+]
+
+static_cloud_lib = cloud_env.StaticLibrary('HB_LeCloud', [lecloud_lib_src])
+cloud_env.InstallTarget(static_cloud_lib, 'HB_LeCloud')

@@ -1,0 +1,44 @@
+##
+# HB_DEVICEMANAGER build script
+##
+
+#Import('env')
+Import('homebrain_env')
+
+DM_env = homebrain_env.Clone()
+
+DM_env.AppendUnique(CPPPATH = [
+        'include',
+        ])
+
+# TODO only for mstar938
+DM_env.AppendUnique(RPATH = [DM_env.get('BUILD_DIR')])
+
+DM_env.PrependUnique(LIBS = ['ipca'])
+
+device_manager_src = [
+    'src/OCFDevice.cpp',
+    'src/OCFClient.cpp',
+    'src/HBDeviceManager.cpp',
+    'src/HBDeviceManagerLog.cpp',
+    ]
+
+DMlib = DM_env.SharedLibrary('device_manager', device_manager_src)
+DM_env.InstallTarget(DMlib, 'device_manager')
+
+DM_demo_env = homebrain_env.Clone()
+
+DM_demo_env.AppendUnique(CPPPATH = [
+        'include',
+        ])
+
+device_manager_demo_src = [
+#    'src/OCFDevice.cpp',
+#    'src/OCFClient.cpp',
+#    'src/HBDeviceManager.cpp',
+    'sample/demo.cpp'
+    ]
+
+DM_demo_env.PrependUnique(LIBS = ['device_manager', 'HB_Utils'])
+DMDemo = DM_demo_env.Program('HBDeviceManagerDemo', device_manager_demo_src)
+DM_demo_env.InstallTarget(DMDemo, 'HBDeviceManagerDemo')

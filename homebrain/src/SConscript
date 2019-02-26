@@ -1,0 +1,91 @@
+######################################################################
+#  homebrain build script
+######################################################################
+
+import os
+import shutil
+
+Import('homebrain_env')
+
+SConscript('ipc-system/SConscript')
+SConscript('utils/SConscript')
+SConscript('device-manager/SConscript', 'homebrain_env')
+SConscript('cloud-manager/SConscript', 'homebrain_env')
+SConscript('rule-engine/SConscript', 'homebrain_env')
+SConscript('http-handler/SConscript', 'homebrain_env')
+
+hb_env = homebrain_env.Clone()
+
+target_os = hb_env.get('TARGET_OS')
+target_arch = hb_env.get('TARGET_ARCH')
+
+hb_env.AppendUnique(RPATH = [hb_env.get('BUILD_DIR')])
+
+hb_env.AppendUnique(CPPPATH = [
+    '.',
+    '#homebrain/external/clips/core',
+    'utils/Log/src',
+    'utils/Message/src',
+    'utils/Misc/src',
+    'utils/SQLite/src',
+    'rule-engine',
+    'rule-engine/RuleDriver/src',
+    'rule-engine/RuleDriver/src/tables',
+    'rule-engine/Clipscpp/src',
+    'rule-engine/Payload/src',
+    'device-manager/include',
+    'http-handler/src/',
+    'ipc-system/src',
+    'cloud-manager/',
+])
+
+if hb_env["PROJECT_PRLATFORM"] in ['mstart648']:
+    if hb_env.get('LECLOUD_VERSION') == '2':
+        cloud_sdk_dir='#/homebrain/external/lecloud2'
+        hb_env.AppendUnique(LIBS = ['le_Arm64Android_gw_debug'])
+    else:
+        cloud_sdk_dir='#/homebrain/external/lecloud'
+        hb_env.AppendUnique(LIBS = ['le_Arm64Android_debug'])
+
+    hb_env.AppendUnique(CPPDEFINES = ['ENABLE_LE_CLOUD'])
+    hb_env.append(cloud_sdk_dir);
+    hb_env.append(os.path.join(cloud_sdk_dir, 'include'))
+
+# Warning: android don't contain sqlite3, HB_Utils already have.
+hb_env.AppendUnique(LIBS=[
+    'gcov',
+    'clips',
+    'ipca',
+    'HB_RuleEngine',
+    'HB_LeCloud',
+    'device_manager',
+    'boost_system',
+    'http_handler',
+])
+
+main_src = [
+    'MainPublicHandler.cpp',
+    'HBHelper.cpp',
+    'HBDatabase.cpp',
+    'HBGlobalTable.cpp',
+    'RuleEngineTable.cpp',
+    'DeviceProfileTable.cpp',
+    'GatewayConnectTable.cpp',
+    'HomeBrainMain.cpp',
+]
+
+if hb_env["PROJECT_PRLATFORM"] in ['linux', 'mstart648', 'kk']:
+    hb_env.AppendUnique(CPPDEFINES = ['ENABLE_MONITOR_TOOL'])
+    main_src.append('MonitorTool.cpp')
+    main_src.append(os.path.join(cloud_sdk_dir, 'main.cpp'))
+    main_src.append(os.path.join(cloud_sdk_dir, 'lecloud_interface.cpp'))
+
+homebrain = hb_env.Program('smarthb', main_src)
+hb_env.InstallTarget(homebrain , 'smarthb')
+
+curdir = os.path.join(hb_env.get('SRC_DIR'), 'homebrain', 'tools', 'clips')
+dstdir = os.path.join(hb_env.get('BUILD_DIR'), 'clips')
+
+if os.path.isdir(dstdir):
+    shutil.rmtree(dstdir)
+shutil.copytree(curdir, dstdir, 1)

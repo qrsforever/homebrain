@@ -1,0 +1,86 @@
+##### Home Brain #####
+
+import os
+
+Import('env')
+
+build_dir = env.get('BUILD_DIR')
+target_os = env.get('TARGET_OS')
+target_arch = env.get('TARGET_ARCH')
+top_dir = env.get('SRC_DIR')
+homebrain_env = env.Clone()
+
+platform = os.environ.get("PROJECT_PRLATFORM")
+
+if platform:
+    homebrain_env["PROJECT_PRLATFORM"] = platform
+else:
+    homebrain_env["PROJECT_PRLATFORM"] = "unkown"
+
+homebrain_env.AppendUnique(CXXFLAGS = [
+    '-fpermissive',
+    '-Wno-error=unused-variable',
+    '-Wno-error=unused-parameter',
+    '-Wno-error=unused-result',
+    '-Wno-error=unused-but-set-variable',
+    '-Wno-error=narrowing',
+])
+
+if 'g++' in homebrain_env.get('CXX'):
+    homebrain_env.AppendUnique(CXXFLAGS = ['-Wall', '-std=c++0x'])
+
+if os.path.exists(os.path.join(top_dir, 'build_info.h')):
+    homebrain_env.AppendUnique(CPPDEFINES = ['HAVE_BUILD_INFO'])
+
+if homebrain_env.get('DEBUG'):
+    homebrain_env.AppendUnique(CPPDEFINES = ['DEBUG'])
+
+# ugly, fix the conflict with #resource/include/AttributeValue.h
+homebrain_env.AppendUnique(CPPDEFINES = [
+    'BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS',
+    'BOOST_MPL_LIMIT_LIST_SIZE=30',
+    'BOOST_MPL_LIMIT_VECTOR_SIZE=30',
+    'HAVE_CLOUD_MANAGER',
+])
+
+homebrain_env.PrependUnique(CPPPATH = [
+    '#/resource/include/',
+    '#/resource/csdk/include',
+    '#/resource/csdk/stack/include',
+    '#/resource/IPCA/inc',
+    '#/resource/oc_logger/include',
+    '#/resource/csdk/connectivity/api',
+    '#/resource/csdk/connectivity/external/inc',
+    '#/resource/csdk/ocsocket/include',
+    '#/resource/csdk/logger/include',
+    '#/extlibs/sqlite3',
+    '#/extlibs/crow/crow/include',
+    '#/extlibs/rapidjson/rapidjson/include',
+    '#homebrain/external/clips/core',
+    '#homebrain/src/utils/Log/src',
+    '#homebrain/src/utils/Message/src',
+    '#homebrain/src/utils/Misc/src',
+    '#homebrain/src/utils/SQLite/src',
+])
+
+if target_os == 'android':
+    homebrain_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions', '-std=c++0x'])
+    homebrain_env.AppendUnique(LIBS = ['gnustl_shared'])
+    homebrain_env.AppendUnique(LIBS = ['log'])
+
+if target_os in ['linux']:
+    homebrain_env.AppendUnique(LIBS = ['gcov'])
+    homebrain_env.AppendUnique(CXXFLAGS = ['--coverage'])
+
+# homebrain_env.AppendUnique(LINKFLAGS = ['-no-pie'])
+
+homebrain_env.PrependUnique(LIBS=[
+    'HB_Utils',
+])
+
+if target_arch in ['x86_64']:
+    homebrain_env.AppendUnique(LIBS=['sqlite3'])
+
+SConscript('external/SConscript', 'homebrain_env')
+SConscript('src/SConscript', 'homebrain_env')
+SConscript('examples/SConscript', 'homebrain_env')

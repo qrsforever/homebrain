@@ -1,0 +1,18 @@
+######################################################################
+#  ipcsystem build script
+######################################################################
+
+import os
+Import('env')
+
+ipc_env = env.Clone()
+
+if 'g++' in ipc_env.get('CXX'):
+    ipc_env.AppendUnique(CXXFLAGS = ['-Wall', '-std=c++0x'])
+
+ipc_src = [
+    'src/IPCSystem.cpp'
+]
+
+ipc_exe = ipc_env.Program('iotsystem', ipc_src)
+ipc_env.InstallTarget(ipc_exe, 'iotsystem')

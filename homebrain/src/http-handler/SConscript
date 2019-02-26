@@ -1,0 +1,39 @@
+##
+# http-handler build script
+##
+
+import os
+Import('homebrain_env')
+
+http_env = homebrain_env.Clone()
+
+http_env.AppendUnique(CPPPATH = [
+    '..',
+    'src',
+    'src/restapi',
+    '../rule-engine',
+    '../rule-engine/RuleDriver/src',
+    '../rule-engine/Payload/src',
+    '../rule-engine/Clipscpp/src',
+    '../device-manager/include',
+    '../cloud-manager',
+    ])
+
+http_handler_src = [
+    'src/MicroHttpHandler.cpp',
+    'src/MicroLogHandler.cpp',
+    'src/MicroMiddleware.cpp',
+    'src/restapi/EngineAPI.cpp',
+    'src/restapi/AuthenticationAPI.cpp',
+    'src/restapi/GatewaysAPI.cpp',
+    'src/restapi/DevicesAPI.cpp',
+    'src/restapi/RulesAPI.cpp',
+    ]
+
+http_env.AppendUnique(LIBS=[
+    'HB_Utils',
+    'HB_RuleEngine',
+])
+
+static_libhttp_handler = http_env.StaticLibrary('http_handler', http_handler_src)
+http_env.InstallTarget(static_libhttp_handler , 'http_handler')

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="author" content="Leeco">
+        <link rel="manifest" href="manifest.json">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" type="text/css" href="styles.css">
+
+        <script src="js/utils.js" ></script>
+        <script src="js/ui.js" ></script>
+        <script src="js/auth.js" ></script>
+        <script src="js/nav-gateways.js" ></script>
+        <script src="js/nav-devices.js" ></script>
+        <script src="js/nav-rules.js" ></script>
+        <script src="js/main.js" ></script>
+        <title>le</title>
+    </head>
+
+    <body id="body" onload="init()">
+        <!--  header -->
+        <header id="header">
+            <a href="">
+                <img id="header-logo"
+                     src="logo.png"
+                     alt="le logo"
+                     />
+            </a>
+            <div id="nav-root" style="visibility:hidden;">
+                <input class="burger-check hidden" id="burger-check" type="checkbox"/>
+                <label for="burger-check" class="burger"><i></i></label>
+                <nav class="nav-container">
+                    <ul class="nav-links">
+                        <li id="nav-gateways" class="nav-links">
+                            <a onclick="showGateways()">{{tab_title_gateways}} </a>
+                        </li>
+                        <li id="nav-devices" class="nav-links">
+                            <a onclick="showDevices()">{{tab_title_devices}} </a>
+                        </li>
+                        <li id="nav-rules" class="nav-links">
+                            <a onclick="showRules()"> {{tab_title_rules}} </a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="dropdown">
+                    <div class="dropdown-title-container">
+                        <img class="dropdown-user-image" src="assets/ic_me.png"/>
+                        <div class="dropdown-username" id="dropdown-username"></div>
+                        <img class="dropdown-caret" src="assets/ic_drop_down.png"/>
+                    </div>
+                    <div class="dropdown-content">
+                        <a href=""
+                           onclick="openPage('preferences');return false;"
+                           class="dropdown-menu-links" > {{account_preferences}} </a>
+                        <br/>
+                        <a href=""
+                            onclick="openPage('settings');return false;"
+                            class="dropdown-menu-links"> {{settings}} </a>
+                        <br/>
+                        <a href=""
+                            onclick="logout();return false;"
+                            class="dropdown-menu-links"> {{logout}} </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- heander  -->
+
+        <div id="app-root">
+            <noscript>
+                You need to enable JavaScript to run this app.
+            </noscript>
+
+            <!-- loading indicator  -->
+            <div id="page-loading" class="spinning-wheel-container" style="display:none">
+                <div class="spinning-wheel"></div>
+                <div class="spinning-wheel-content-box" id="page-loading-text"></div>
+            </div>
+            <!-- loading indicator  -->
+
+            <!--  login -->
+            <div id="page-login" class="form-container" style="display:none">
+                <h1 class="form-title"> {{login_header}} </h1>
+                <p class="form-info-text"> {{login_text"}} </p>
+                <form id="login-form" class="form" onSubmit="submitLogin();return false;">
+                    <input
+                        id="login-username"
+                        placeholder="{{username}}"
+                        name="username"
+                        type="text"
+                        required=""
+                        />
+                    <input
+                        id="login-password"
+                        placeholder="{{password}}"
+                        name="password"
+                        type="password"
+                        required=""
+                        />
+                    <div id="login-errormsg" class="form-errormsg" style="display:none"></div>
+                    <button
+                        id="login-submit"
+                        type="submit"
+                        class="btn-primary"> {{login_submit}} </button>
+                </form>
+                <a href=""
+                   onclick="openPage('password_reset');return false;"
+                   class="form-link"> {{forgot_password}} </a>
+                <a href=""
+                   id="login-registration-link"
+                   onclick="openPage('registration');return false;"
+                   class="form-link"> {{register_here}} </a>
+            </div>
+            <!-- login  -->
+
+            <!-- gateways  -->
+            <div id="gateways" style="display:none;">
+                <div class="page-header">
+                    <h1 class="page-title"> {{tab_title_gateways}} </h1>
+                    <button class="default-icon-button add-icon" onClick="openGatewayBindingModal()"></button>
+                </div>
+                <div id="introduction-gateways" class="page-introduction">
+                    <div class="page-intro-text-main">
+                        <span> {{page_intro_gateways_main_1}} </span>
+                        <img src="assets/ic_add.png" style="margin-bottom: -6px;"/>
+                        <span> {{page_intro_gateways_main_2}} </span>
+                    </div>
+                </div>
+                <div id="body-gateways" class="gateways-container">
+                </div>
+            </div>
+            <!-- gateways  -->
+
+            <!-- devices  -->
+            <div id="devices" style="display:none;">
+                <div class="page-header">
+                    <h1 class="page-title"> {{tab_title_devices}} </h1>
+                    <button class="default-icon-button add-icon" onClick="openOnboardingModal()"></button>
+                    <div id="filter-devices" class="device-combobox-container"></div>
+                </div>
+                <div id="introduction-devices" class="page-introduction">
+                    <div class="page-intro-text-main">
+                        <span> {{page_intro_devices_main_1}} </span>
+                        <img src="assets/ic_add.png" style="margin-bottom: -6px;"/>
+                        <span> {{page_intro_devices_main_2}} </span>
+                    </div>
+                </div>
+                <div id="body-devices" class="device-container">
+                    <!-- Device list will be injected here -->
+                </div>
+            </div>
+            <!-- devices  -->
+
+            <!-- rules  -->
+            <div id="rules" style="display:none">
+                <div class="page-header">
+                    <h1 class="page-title"><span id="scene">{{tab_title_rules}}&nbsp;</span></h1>
+                    <button class="default-icon-button add-icon" onClick="openRuleCreationModal()"></button>
+                </div>
+                <div id="introduction-rules" class="page-introduction">
+                    <div class="page-intro-text-main">
+                        <span>{{page_intro_rules_main_1}}</span>
+                        <img src="assets/ic_add.png" style="margin-bottom: -6px;"/>
+                        <span>{{page_intro_rules_main_2}}</span>
+                    </div>
+                </div>
+                <div id="body-rules" class="rules-container">
+                    <!-- Rules will be injected here -->
+                </div>
+            </div>
+            <!-- rules  -->
+
+        </div>
+
+        <!-- footer  -->
+        <footer id="footer">
+            <div id="footer-left-section">
+                <ul>
+                    <li style="list-style-type: none;" ><a href="https://qrsforever.github.io">QRS Home</a></li>
+                </ul>
+            </div>
+            <div id="footer-right-section">
+                Copyright&nbsp;© 2019, QRS&nbsp;github
+            </div>
+        </footer>
+        <!-- footer  -->
+    </body>
+</html>

@@ -1,0 +1,70 @@
+##
+# rule-engine build script
+##
+
+import os
+Import('homebrain_env')
+
+rule_engine_env = homebrain_env.Clone()
+top_dir = rule_engine_env.get('SRC_DIR')
+
+rule_engine_env.AppendUnique(CPPPATH = [
+    top_dir,
+    '.',
+    '..',
+    'RuleDriver/src',
+    'RuleDriver/src/tables',
+    'Clipscpp/src',
+    'Payload/src',
+    '../device-manager/include',
+    '../cloud-manager/',
+])
+
+rule_engine_env.AppendUnique(LIBS=[
+    'clips',
+    'device_manager',
+])
+
+rule_engine_env.AppendUnique(RPATH = [rule_engine_env.get('BUILD_DIR')])
+
+clipscpp_src = [
+    'Clipscpp/src/Activation.cpp',
+    'Clipscpp/src/DefaultFacts.cpp',
+    'Clipscpp/src/Environment.cpp',
+    'Clipscpp/src/Class.cpp',
+    'Clipscpp/src/Fact.cpp',
+    'Clipscpp/src/Function.cpp',
+    'Clipscpp/src/Global.cpp',
+    'Clipscpp/src/Instance.cpp',
+    'Clipscpp/src/Module.cpp',
+    'Clipscpp/src/Router.cpp',
+    'Clipscpp/src/Rule.cpp',
+    'Clipscpp/src/Template.cpp',
+    'Clipscpp/src/Utility.cpp',
+    'Clipscpp/src/Value.cpp',
+]
+
+ruledriver_src = [
+    'RuleDriver/src/RuleEngineCore.cpp',
+    'RuleDriver/src/RuleEngineService.cpp',
+    'RuleDriver/src/RuleEventHandler.cpp',
+    'RuleDriver/src/RuleEventThread.cpp',
+    'RuleDriver/src/RuleEngineTimer.cpp',
+    'RuleDriver/src/TimerEvent.cpp',
+    'Payload/src/ClassPayload.cpp',
+    'Payload/src/InstancePayload.cpp',
+    'Payload/src/RulePayload.cpp',
+    'DataChannel.cpp',
+    'DeviceDataChannel.cpp',
+    'CloudDataChannel.cpp',
+    'RuleEngineLog.cpp',
+    # 'RuleDriver/src/RuleEngineStore.cpp',
+    # 'RuleDriver/src/tables/DefTable.cpp',
+    # 'RuleDriver/src/tables/DefTemplateTable.cpp',
+    # 'RuleDriver/src/tables/DefClassTable.cpp',
+    # 'RuleDriver/src/tables/DefRuleTable.cpp',
+    # 'RuleDriver/src/tables/TimerEventTable.cpp',
+]
+
+shared_libRE = rule_engine_env.SharedLibrary('HB_RuleEngine', [clipscpp_src, ruledriver_src])
+rule_engine_env.InstallTarget(shared_libRE, 'HB_RuleEngine')
