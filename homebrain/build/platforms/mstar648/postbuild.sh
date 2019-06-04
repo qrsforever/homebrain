@@ -40,7 +40,6 @@ then
 fi
 
 mkdir -p $output_dir/data/homebrain
-mkdir -p $output_dir/system/
 mkdir -p $output_dir/system/bin
 
 if [[ x${ANDROID_ARCH} == x"arm64" ]]

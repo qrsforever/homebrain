@@ -1,0 +1,17 @@
+Import('env')
+
+crow_env = env.Clone()
+
+crow_env.AppendUnique(CPPPATH = [
+        '#extlibs/crow/crow/include'
+        ])
+
+crow_env.AppendUnique(RPATH = [crow_env.get('BUILD_DIR')])
+
+compiler = crow_env.get('CXX')
+if 'g++' in compiler:
+    crow_env.AppendUnique(CXXFLAGS = ['-std=c++11', '-Wall'])
+
+crow_env.AppendUnique(LIBS=['boost_system'])
+
+crow_env.Program('crow', ['example.cpp'])

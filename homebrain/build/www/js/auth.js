@@ -1,3 +1,9 @@
+/// @file auth.js
+/// @Brief
+/// @author QRS
+/// @version 0.0.9
+/// @date 2019-01-29
+
 var Auth = function(ui) {
     this.token = "";
     this.user = "";
@@ -64,6 +70,7 @@ Auth.prototype.submitLogin = function() {
             usernameInput.disabled = false;
             passwordInput.disabled = false;
             if (error) {
+                messagebox.style.display = "block";
                 switch (error.status) {
                     case 401:
                         messagebox.textContent = "{{login_invalid}}"
@@ -76,14 +83,21 @@ Auth.prototype.submitLogin = function() {
                 }
             } else {
                 var responseData = JSON.parse(responseText);
+                if (responseData["status"] != global.RES_STATUS_OK) {
+                    messagebox.textContent = "{{login_wrong_user}}"
+                    messagebox.style.display = "block";
+                    return;
+                }
                 that_a.token = responseData["token"];
                 that_a.user = usernameInput.value;
                 that_a.ui.enableNavigation(that_a.user, that_a.token);
                 saveSessionCookie(that_a.user, that_a.token);
                 sendMessage(events.LOGIN_OK);
+                messagebox.style.display = "none";
             }
         } catch (err) {
             messagebox.textContent = "{{login_internal_failure}}"
+            messagebox.style.display = "block";
         }
     });
 }
@@ -93,7 +107,8 @@ Auth.prototype.userinfo = function(callback) {
 }
 
 Auth.prototype.login = function(username, passwd, callback) {
-    var body = urlencode({"user": username, "pwd": passwd})
+    // var body = urlencode({"user": username, "pwd": passwd})
+    var body = '{"user":"' + username + '", "pwd":"' +  passwd + '"}';
     httpRequest("POST", "/api/authentication/login", body, callback);
 }
 

@@ -9,7 +9,6 @@
 #include "RuleEventHandler.h"
 #include "RuleEventThread.h"
 #include "RuleEventTypes.h"
-#include "RuleEngineStore.h"
 #include "RuleEngineService.h"
 #include "RuleEngineLog.h"
 #include "StringData.h"
@@ -47,11 +46,6 @@ void RuleEventHandler::handleMessage(Message *msg)
     RE_LOGD("msg: [%d] [%d] [%d]\n", msg->what, msg->arg1, msg->arg2);
 
     switch(msg->what) {
-#if 0
-        case RET_STORE_CLOSE:
-            ruleEngine().store()->close();
-            break;
-#endif
         case RET_DEBUG:
             ruleEngine().ccore()->debug(msg->arg1);
             break;

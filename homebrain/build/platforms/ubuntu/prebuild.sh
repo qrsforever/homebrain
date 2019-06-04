@@ -4,13 +4,14 @@
 # title: prebuild
 #=================================================================
 
-if [[ $# != 1 ]]
+if [[ $# != 2 ]]
 then
     echo "Error, Use: prebuild.sh project_top_dir"
     exit
 fi
 
 pro_top_dir=$1
+platform=$2
 build_dir=$pro_top_dir/homebrain/build
 extlibs_dir=$build_dir/extlibs
 script_dir=$build_dir/script
@@ -19,6 +20,12 @@ script_dir=$build_dir/script
 . $script_dir/decompress_extlibs_tarball.sh
 
 echo "======> prebuild project top dir: [$pro_top_dir], extlibs dir: [$extlibs_dir]"
+
+output_dir=$pro_top_dir/out/${platform}
+if [[ ! -d $output_dir ]]
+then
+    mkdir -p $output_dir
+fi
 
 #-----------------------------------------------------------------
 #   Decompress the boost tarball
@@ -60,3 +67,9 @@ DET_DecompressTarball $extlibs_dir/rapidjson-1.0.2.tar.gz "1.0.2" $pro_top_dir/e
 #-----------------------------------------------------------------
 
 DET_DecompressTarball $extlibs_dir/crow-0.1.zip "0.1" $pro_top_dir/extlibs/crow
+
+#-----------------------------------------------------------------
+#	Decompress the mqtt
+#-----------------------------------------------------------------
+
+DET_DecompressTarball $extlibs_dir/mqtt/paho.mqtt.embedded-c-1.1.0.zip "1.1.0" $output_dir/extlibs/mqtt

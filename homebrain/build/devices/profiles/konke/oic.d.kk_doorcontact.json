@@ -1,0 +1,31 @@
+{
+    "devicetype": "oic.d.kk_doorcontact",
+    "devicename": "控客智能门磁",
+    "manufacture": "Konke",
+    "version": "0.9.2",
+    "iconid": "ic_default_door",
+    "profile": {
+        "OnlineState": {
+            "tag": "在线状态",
+            "write": "F",
+            "read": "T",
+            "type": "enum",
+            "range": {
+                "0": "离线",
+                "1": "在线"
+            }
+        },
+        "value": {
+            "rt": "oic.r.switch.binary",
+            "iconid": "ic_default_switch",
+            "tag": "智能门锁",
+            "read": "T",
+            "write": "F",
+            "type": "boolean",
+            "range": {
+                "0": "关闭",
+                "1": "开启"
+            }
+        }
+    }
+}

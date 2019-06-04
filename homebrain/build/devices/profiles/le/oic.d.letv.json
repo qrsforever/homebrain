@@ -1,0 +1,41 @@
+{
+    "devicetype": "oic.d.letv",
+    "devicename": "乐视电视",
+    "manufacture": "Le",
+    "version": "0.9.2",
+    "iconid": "ic_default_tv",
+    "profile": {
+        "OnlineState": {
+            "tag": "在线状态",
+            "write": "F",
+            "read": "T",
+            "type": "enum",
+            "range": {
+                "0": "离线",
+                "1": "在线"
+            }
+        },
+        "power": {
+            "tag": "电视开关",
+            "read": "F",
+            "write": "T",
+            "type": "enum",
+            "range": {
+                "0": "关闭",
+                "1": "开启"
+            },
+            "unit": ""
+        },
+        "state": {
+            "tag": "电视状态",
+            "read": "T",
+            "write": "F",
+            "type": "enum",
+            "range": {
+                "0": "关闭",
+                "1": "开启"
+            },
+            "unit": ""
+        }
+    }
+}

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [[ ! -d /var/homebrain ]]
+then
+    mkdir -p /var/homebrain
+fi
+
+dt=`date +%Y%m%d-%H:%M:%S`
+echo $dt >> /var/homebrain/startup.count
+
+# -d: configure root dir
+# -h: hue bridge configure file
+# -t: smarthb sleep time seconds after bridge startup
+# -u: kk bridge user
+# -k: kk bridge key
+
+#smarthb -B -d /var/homebrain -h hue_bridge.conf -t 10 -u 03633 -k E1329393DADAB51CE6705DEC5D25D20C
+smarthb -B -d /var/homebrain -h hue_bridge.conf -t 10 -u 02169 -k C3E2C6C75DCC222A1472E67B57F05B83
+
+sleep 2

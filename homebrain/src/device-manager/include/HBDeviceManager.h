@@ -196,6 +196,14 @@ public:
     int EnableGatewayNet(std::string gatewayId);
 
     /**
+     * API to delete subdev.
+     *
+     * @param[in] deviceId: device ID
+     * @return 0:success -1:fail.
+     */
+    int DeleteDevice(std::string deviceId);
+
+    /**
      * API to get device owned status.
      *
      * @param[in] deviceId: device ID

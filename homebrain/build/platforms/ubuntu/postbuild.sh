@@ -16,7 +16,7 @@ pro_top_dir=$1
 platform=$2
 release_dir="$pro_top_dir/out/$3"
 current_dir=`dirname ${BASH_SOURCE[0]}`
-output_dir=$pro_top_dir/out
+output_dir=$pro_top_dir/out/${platform}
 hb_dir=$pro_top_dir/homebrain
 build_dir=$hb_dir/build
 script_dir=$build_dir/script
@@ -29,12 +29,17 @@ then
     exit
 fi
 
-rm -rf $output_dir/$platform
-mkdir -p $output_dir/$platform
+if [[ -d $output_dir/root ]]
+then
+    rm -rf $output_dir/root
+fi
 
-__Check_and_Copy $release_dir/iotsystem $output_dir/$platform
-__Check_and_Copy $release_dir/smarthb   $output_dir/$platform
+mkdir -p $output_dir/root/bin
+mkdir -p $output_dir/root/lib
+mkdir -p $output_dir/root/homebrain
 
-__Check_and_Copy $build_dir/devices $output_dir/$platform
-__Check_and_Copy $build_dir/clips   $output_dir/$platform
-__Check_and_Copy $build_dir/www     $output_dir/$platform
+__Check_and_Copy $release_dir/iotsystem $output_dir/root/bin
+__Check_and_Copy $release_dir/smarthb   $output_dir/root/bin
+__Check_and_Copy $build_dir/devices $output_dir/root/homebrain
+__Check_and_Copy $build_dir/clips   $output_dir/root/homebrain
+__Check_and_Copy $build_dir/www     $output_dir/root/homebrain

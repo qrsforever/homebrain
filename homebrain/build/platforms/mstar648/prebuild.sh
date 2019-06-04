@@ -104,3 +104,10 @@ DET_DecompressTarball $extlibs_dir/rapidjson-1.0.2.tar.gz "1.0.2" $pro_top_dir/e
 DET_DecompressTarball $extlibs_dir/crow-0.1.zip "0.1" $pro_top_dir/extlibs/crow
 cp $current_dir/compat/stdtostring.h $pro_top_dir/extlibs/crow/crow/include/
 sed -i '1a\#include \"stdtostring.h\"' $pro_top_dir/extlibs/crow/crow/include/crow.h
+
+
+#-----------------------------------------------------------------
+#	Decompress the mqtt
+#-----------------------------------------------------------------
+
+DET_DecompressTarball $extlibs_dir/mqtt/paho.mqtt.embedded-c-1.1.0.zip "1.1.0" $output_dir/extlibs/mqtt

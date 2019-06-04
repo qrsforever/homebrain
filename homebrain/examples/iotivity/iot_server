@@ -1,0 +1,16 @@
+#!/system/bin/sh
+
+while ((1))
+do
+    result1=`getprop dhcp.eth0.result`
+    result2=`getprop dhcp.wlan0.result`
+    echo "$result1 $result2"
+    if [[ x$result1 == xok || x$result2 == xok ]]
+    then
+       break;
+    fi
+    sleep 1
+done
+
+/data/tvserver
+

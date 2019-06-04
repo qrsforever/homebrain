@@ -98,6 +98,9 @@ public:
 
     // Get gateway by gateway id
     OCFDevice::Ptr GetGatewayById(std::string gatewayId);
+
+    // Delete device
+    IPCAStatus DeleteDevice(std::string deviceId);
     // set/get callback handle, SetCallback should be invoked before init().
     void SetCallback(OCFDeviceCallBackHandler* callback);
     OCFDeviceCallBackHandler* GetCallback();

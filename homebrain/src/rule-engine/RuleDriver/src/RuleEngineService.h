@@ -12,7 +12,6 @@
 #include "MessageHandler.h"
 #include "DataChannel.h"
 #include "RuleEventThread.h"
-// #include "RuleEngineStore.h"
 #include "RuleEngineTimer.h"
 #include "RuleEngineCore.h"
 #include "RuleEventHandler.h"
@@ -75,7 +74,6 @@ public:
 private:
     friend class RuleEventHandler;
     inline RuleEngineCore::pointer ccore();
-    // inline RuleEngineStore::pointer store() { return mStore; }
     // inline RuleEngineTimer::pointer timer() { return mTimer; }
 
     bool _OfflineInstanceCalledByRHS(std::string &insName, std::string &rulName);
@@ -87,7 +85,6 @@ private:
     RuleEngineCore::pointer mCoreForUrgent;
 
     RuleEngineTimer::pointer mTimer;
-    // RuleEngineStore::pointer mStore;
     DataChannel::pointer mRuleChannel;
     DataChannel::pointer mClassChannel;
 

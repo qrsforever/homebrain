@@ -26,13 +26,16 @@ public:
 protected:
     void handleMessage(Message *msg);
 
+    void doNetworkSuccess();
+
 private:
-    void doDeviceEvent(Message *msg);
+    void onNetworkEvent(Message *msg);
+    void onDeviceEvent(Message *msg);
 #ifdef ENABLE_MONITOR_TOOL
-    void doMonitorEvent(Message *msg);
+    void onMonitorEvent(Message *msg);
 #endif
 #ifdef SIM_SUITE
-    void doSimulateEvent(Message *msg);
+    void oonSimulateEvent(Message *msg);
 #endif
 
 }; /* class MainPublicHandler */

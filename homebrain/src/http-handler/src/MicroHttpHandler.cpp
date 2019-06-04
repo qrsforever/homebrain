@@ -19,7 +19,7 @@ extern void initRulesAPI(APP&);
 
 MicroHttpHandler::MicroHttpHandler()
     : Thread()
-    , mPort(9988)
+    , mPort(8899)
     , mMulti(1)
 {
 }

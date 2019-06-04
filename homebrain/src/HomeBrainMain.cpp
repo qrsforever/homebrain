@@ -156,6 +156,10 @@ void InitThread::run()
     gDeviceCallback = new HBDeviceCallbackHandlerImpl(deviceChnnl);
     deviceManager().SetCallback(gDeviceCallback);
     deviceManager().Init();
+
+    // TODO check network
+    mainHandler().sendMessage(mainHandler().obtainMessage(MT_NETWORK,
+            NETWORK_EVENT_CONNECT, NETWORK_CONNECT_SUCCESS));
 }
 
 int main(int argc, char *argv[])
@@ -179,7 +183,7 @@ int main(int argc, char *argv[])
      *-----------------------------------------------------------------*/
     initLogThread();
     setLogLevel(LOG_LEVEL_TRACE);
-    /* disableLogPool(); */
+    // disableLogPool();
 
     /* LogPool::getInstance().attachFilter(new LogFile()); */
 
@@ -196,6 +200,5 @@ int main(int argc, char *argv[])
     /*-----------------------------------------------------------------
      *  4. dispach the message, never return;
      *-----------------------------------------------------------------*/
-    // startKonkeBridge("02169", "C3E2C6C75DCC222A1472E67B57F05B83");
     return mainThreadRun();
 }

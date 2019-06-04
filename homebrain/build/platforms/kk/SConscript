@@ -1,0 +1,13 @@
+######################################################################
+#  platform script
+######################################################################
+
+import os
+
+Import('env')
+
+top_dir = env.get('SRC_DIR')
+
+## Build MQTT
+platform = os.path.basename(os.getcwd())
+SConscript(os.path.join(top_dir, 'out', platform, 'extlibs', 'mqtt', 'SConscript'))

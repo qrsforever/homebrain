@@ -39,6 +39,11 @@ DET_DecompressTarball() {
         tarfile=$1
         version=$2
         destdir=$3
+        srcdir=`dirname $tarfile` 
+        if [[ ! -d $destdir ]]
+        then
+            mkdir -p $destdir
+        fi
         ret=$(REV_CompareVersionNumber $version $destdir)
         if [[ x$ret != x1 ]]
         then
@@ -58,6 +63,10 @@ DET_DecompressTarball() {
                 echo "Warning: not found $tarfile!"
                 exit -1
             fi
+        fi
+        if [[ -f $srcdir/SConscript ]]
+        then
+            cp $srcdir/SConscript $destdir
         fi
     else
         echo "Error: DET_DecomppressTarball tarfile version destdir!"

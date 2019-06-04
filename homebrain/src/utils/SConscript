@@ -28,7 +28,7 @@ utils_env.AppendUnique(CXXFLAGS = [
 if not utils_env.get('RELEASE'):
     utils_env.AppendUnique(CPPDEFINES = ['DEBUG'])
 
-utils_env.PrependUnique(LIBS=['sqlite3']);
+utils_env.AppendUnique(LIBS=['sqlite3']);
 
 if target_os == 'android':
     utils_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions'])

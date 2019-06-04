@@ -1,0 +1,32 @@
+##
+# gw_agent-handler build script
+##
+
+import os
+Import('homebrain_env')
+
+gw_agent_env = homebrain_env.Clone()
+
+gw_agent_env.AppendUnique(CPPPATH = [
+    os.path.join(gw_agent_env.get('BUILD_DIR'), 'include'),
+    ])
+
+
+gw_agent_env.AppendUnique(CXXFLAGS = [
+    '-DMQTT_CLIENT',
+])
+
+gw_agent_src = [
+    'src/GatewayAgent.cpp',
+    'src/GatewayAgentHandler.cpp',
+    'src/GatewayAgentLog.cpp',
+    'src/mqtt/MQTTClient.c',
+    'src/mqtt/MQTTLinux.c',
+    ]
+
+gw_agent_env.AppendUnique(LIBS=[
+    'MQTTPacketClient'
+])
+
+libgw_agent = gw_agent_env.SharedLibrary('HB_GWAgent', gw_agent_src)
+gw_agent_env.InstallTarget(libgw_agent , 'HB_GWAgent')

@@ -1,0 +1,24 @@
+{
+    "sceneId": "-",
+    "sceneName": "manualtest",
+    "description": "",
+    "trigger": {
+        "switch": {
+            "enabled": "on",
+            "notify": "off",
+            "timeCondition": "off",
+            "deviceCondition": "off",
+            "manual": "off"
+        },
+        "triggerType": "manual"
+    },
+    "actions": {
+        "deviceControl": [
+            {
+                "propValue": "1",
+                "deviceId": "00124b00-19a8-9215-d0d0",
+                "propName": "value1"
+            }
+        ]
+    }
+}

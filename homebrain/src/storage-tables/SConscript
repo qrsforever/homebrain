@@ -1,0 +1,28 @@
+##
+# database build script
+##
+
+import os
+Import('homebrain_env')
+
+db_env = homebrain_env.Clone()
+
+db_env.AppendUnique(CPPPATH = [
+    '..',
+    'src',
+    ])
+
+db_src = [
+    'src/HBDatabase.cpp',
+    'src/HBGlobalTable.cpp',
+    'src/RuleEngineTable.cpp',
+    'src/DeviceProfileTable.cpp',
+    'src/GatewayConnectTable.cpp',
+    ]
+
+db_env.PrependUnique(LIBS=[
+    'sqlite3',
+])
+
+static_libdatabase = db_env.StaticLibrary('HB_StorageTable', db_src)
+db_env.InstallTarget(static_libdatabase, 'HB_StorageTable')

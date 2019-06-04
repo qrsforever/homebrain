@@ -29,7 +29,7 @@ void deviceProfileCheckAndUpdate(const char *path);
 
 int lightSystemCall(int what, int argc, char *args[]);
 
-int startBridge(const char* bridgeType, const char *bridgeId, const char *accessKey);
+int startBridge(const char* bridgeType, const char *bridgeId, const char *accessKey, const char* ip);
 int killBridge(const char *bridgeId);
 
 } /* namespace HB */

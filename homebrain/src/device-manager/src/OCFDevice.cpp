@@ -43,6 +43,7 @@ OCFDevice::OCFDevice(IPCAAppHandle appHandle, std::string id, std::string interI
 
 OCFDevice::~OCFDevice()
 {
+    DM_LOGD("free device: %s\n", m_deviceId.c_str());
     if (m_deviceHandle != nullptr)
     {
         IPCACloseDevice(m_deviceHandle);

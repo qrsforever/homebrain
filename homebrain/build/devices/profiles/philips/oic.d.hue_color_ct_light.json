@@ -1,0 +1,68 @@
+{
+    "devicetype": "oic.d.hue_color_ct_light",
+    "devicename": "飞利浦带色温饱和度灯",
+    "manufacture": "Philips",
+    "iconid": "ic_default_light",
+    "version": "0.9.2",
+    "profile": {
+        "OnlineState": {
+            "tag": "在线状态",
+            "write": "F",
+            "read": "T",
+            "type": "enum",
+            "range": {
+                "0": "离线",
+                "1": "在线"
+            }
+        },
+        "value": {
+            "rt": "oic.r.switch.binary",
+            "iconid": "ic_default_switch",
+            "tag": "开关",
+            "read": "T",
+            "write": "T",
+            "type": "enum",
+            "range": {
+                "0": "关闭",
+                "1": "开启"
+            },
+            "unit": ""
+        },
+        "brightness": {
+            "rt": "oic.r.light.brightness",
+            "tag": "亮度",
+            "read": "T",
+            "write": "T",
+            "type": "int",
+            "range": "v >= 0 and v <= 100",
+            "unit": ""
+        },
+        "ct": {
+            "rt": "oic.r.colour.colourtemperature",
+            "tag": "色温",
+            "read": "T",
+            "write": "T",
+            "type": "int",
+            "range": "v >= 0 and v <= 360",
+            "unit": ""
+        },
+        "hue": {
+            "rt": "oic.r.colour.hs",
+            "tag": "色调",
+            "read": "T",
+            "write": "T",
+            "type": "int",
+            "range": "v >= 0 and v <= 360",
+            "unit": ""
+        },
+        "saturation": {
+            "rt": "oic.r.colour.hs",
+            "tag": "饱和度",
+            "read": "T",
+            "write": "T",
+            "type": "int",
+            "range": "v >= 0 and v <= 100",
+            "unit": ""
+        }
+    }
+}

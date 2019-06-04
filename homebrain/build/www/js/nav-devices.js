@@ -95,7 +95,7 @@ Devices.prototype.buildDevices = function(devs) {
         html += '        <button';
         html += '            id="' + did + '_iconbutton"';
         html += '            class="iconselection-button"';
-        html += '            onclick="onUnbindDevice(\'' + did + '\')"';
+        html += '            onclick="onDeleteDevice(\'' + did + '\')"';
         html += '        >';
         html += '            <img';
         html += '                id="' + did + '_icon"';
@@ -134,7 +134,7 @@ Devices.prototype.buildDeviceHeader = function(did, tid, label) {
     html += ' </div>';
     html += ' <button';
     html += '     class="default-icon-button list-icon-button trash-icon"';
-    html += '     onclick="ui.notImplAlert()"';
+    html += '     onclick="onUnbindDevice(\'' + did + '\')"';
     html += ' ></button>';
     html += '<button';
     html += '    id="' + 'toggleExpand' + did + '"';
@@ -498,6 +498,29 @@ Devices.prototype.unbind = function(did) {
             that_r.ui.buildGenericErrorModal(
                     responseData["errors"]["code"],
                     responseData["errors"]["message"]);
+        } catch (err) {
+            console.log(err);
+            that_d.ui.buildGenericErrorModal();
+        }
+    });
+}
+
+Devices.prototype.delete = function(did) {
+    var uri = "/api/familydevice/delete";
+    var body = "{\"deviceId\": \"" + did + "\"}";
+    httpRequest("POST", uri, body, function(responseText, error) {
+        if (error && error.status != 200) {
+            console.log(error);
+            that_d.ui.buildGenericErrorModal();
+            return;
+        }
+        // console.log("request %s:%s", uri, responseText);
+        try {
+            var responseData = JSON.parse(responseText);
+            if (responseData["status"] == global.RES_STATUS_OK) {
+                that_d.initUI();
+                return;
+            }
         } catch (err) {
             console.log(err);
             that_d.ui.buildGenericErrorModal();

@@ -254,6 +254,34 @@ int HBDeviceManager::EnableGatewayNet(std::string gatewayId)
     return -1;
 }
 
+int HBDeviceManager::DeleteDevice(std::string deviceId)
+{
+    std::string gatewayId;
+    if (m_client != nullptr) {
+        OCFDevice::Ptr device = GetDeviceById(deviceId);
+        std::string uri = device->m_resourceUri;
+        int cnt = 0;
+
+        for (int i = 0; i < uri.length(); i++) {
+            if (uri[i] == '/') {
+                cnt++;
+            } else if (cnt == 3) {
+                gatewayId.push_back(uri[i]);
+            }
+        }
+
+        m_client->DeleteDevice(deviceId);
+        OCFDevice::Ptr gateway = m_client->GetGatewayById(gatewayId);
+        if (device != nullptr) {
+            if (IPCA_OK == m_client->SetDeviceProperty(gateway->m_deviceId, "delete_device", deviceId.c_str(), true)) {
+                DM_LOGD("success. deviceId: %s, gatewayId: %s\n", deviceId.c_str(), gatewayId.c_str());
+                return 0;
+            }
+        }
+    }
+    DM_LOGD("failed. deviceId: %s, gatewayId:%s\n", deviceId.c_str(), gatewayId.c_str());
+    return -1;
+}
 int HBDeviceManager::GetDeviceOwnedStatus(
         std::string deviceId,
         HBDeviceOwnedStatus& ownedStatus)

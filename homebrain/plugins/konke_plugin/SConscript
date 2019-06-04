@@ -1,0 +1,104 @@
+#******************************************************************
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+##
+# Konke Plugin build script
+##
+
+import os
+import os.path
+
+Import('env')
+
+target_os = env.get('TARGET_OS')
+src_dir = env.get('SRC_DIR')
+bridging_path = os.path.join(src_dir, 'bridging')
+
+konke_env = env.Clone()
+
+print("Reading Hue Plugin script")
+
+
+def maskFlags(flags):
+    flags = [flags.replace('-Wl,--no-undefined', '') for flags in flags]
+    return flags
+
+
+######################################################################
+# Build flags
+######################################################################
+
+konke_env.PrependUnique(CPPPATH=[
+    os.path.join(src_dir, 'resource', 'c_common', 'oic_malloc', 'include'),
+    os.path.join(src_dir, 'resource', 'c_common', 'oic_string', 'include'),
+    os.path.join(src_dir, 'resource', 'c_common'),
+    os.path.join(src_dir, 'resource', 'oc_logger', 'include'),
+    os.path.join(src_dir, 'resource', 'csdk', 'logger', 'include'),
+    os.path.join(src_dir, 'resource', 'csdk', 'include'),
+    os.path.join(src_dir, 'resource', 'csdk', 'stack', 'include'),
+    os.path.join(src_dir, 'resource', 'include'),
+    os.path.join(src_dir, 'extlibs', 'cjson'),
+    os.path.join(src_dir, 'extlibs', 'tinycbor', 'src'),
+    os.path.join(src_dir, 'extlibs', 'rapidjson', 'rapidjson', 'include', 'rapidjson'),
+    os.path.join(src_dir, 'extlibs', 'libcurl', 'include')
+])
+konke_env.AppendUnique(CPPPATH=[
+    os.path.join(bridging_path, 'include'),
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin'),
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin','include')
+])
+
+if target_os not in ['arduino', 'windows']:
+    konke_env.AppendUnique(CPPDEFINES=['WITH_POSIX'])
+
+if target_os in ['darwin', 'ios']:
+    konke_env.AppendUnique(CPPDEFINES=['_DARWIN_C_SOURCE'])
+
+konke_env.AppendUnique(CXXFLAGS=['-std=c++0x', '-Wall', '-Wextra', ])
+#konke_env.AppendUnique(CXXFLAGS=['-std=c++0x', '-Wall', '-Wextra', '-Werror'])
+
+if konke_env.get('LOGGING'):
+    konke_env.AppendUnique(CPPDEFINES=['TB_LOG'])
+
+konke_env['LINKFLAGS'] = maskFlags(env['LINKFLAGS'])
+konke_env.AppendUnique(LINKFLAGS=['-Wl,--allow-shlib-undefined'])
+konke_env.AppendUnique(LINKFLAGS=[
+    '-Wl,--whole-archive',
+    konke_env.get('BUILD_DIR') + 'libmpmcommon.a', '-Wl,-no-whole-archive'
+])
+
+konke_env.AppendUnique(LIBS=[
+    'm', 'cjson', 'octbstack', 'ocsrm', 'connectivity_abstraction', 'coap',
+    'curl','HJ_KKSDK','gnustl_shared'
+])
+
+#####################################################################
+# Source files and Target(s)
+######################################################################
+
+konke_src = [
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin', 'konke_resource.cpp'),
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin', 'KonkeCcu.cpp'),
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin', 'KonkeDevice.cpp'),
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin', 'KonkeSensor.cpp'),
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin', 'KonkeSwitch.cpp'),
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin', 'KonkeSOSAlarm.cpp'),
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin', 'KonkeDoorContact.cpp'),
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin', 'KonkeIlluminometer.cpp'),
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin', 'KonkeCurtain.cpp'),
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin', 'KonkeSmartplug.cpp'),
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin', 'KonkeManager.cpp'),
+    os.path.join(src_dir, 'homebrain','plugins', 'konke_plugin', 'KonkeDeviceFactory.cpp'),
+]
+demo_src = [
+    'KonkeDevice.cpp',
+    'KonkeCcu.cpp',
+    'KonkeManager.cpp',
+]
+
+#same "libHJ_KKSDK.so" as homebrain/external/kk_sdk/lib/libHJ_KKSDK.so
+#konke_env.InstallTarget('lib/libHJ_KKSDK.so', 'libHJ_KKSDK')
+
+konke_env.AppendUnique(KONKE_SRC=konke_src)
+konkelib = konke_env.SharedLibrary('konkeplugin', konke_env.get('KONKE_SRC'))
+konke_env.InstallTarget(konkelib, 'konkeplugin')
+konke_env.UserInstallTargetLib(konkelib, 'konkeplugin')

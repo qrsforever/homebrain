@@ -231,9 +231,9 @@ Gateways.prototype.addSubmit = function(type) {
             gatewayId = id.value;
             body = {
                 "gatewayType": type,
-                "id" : id.value,
-                "username" : username.value,
-                "internalipaddress": ip.value};
+                "gatewayId" : id.value,
+                "accessKey" : username.value,
+                "gatewayIp": ip.value};
             break;
         default:
             ;

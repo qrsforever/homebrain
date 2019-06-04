@@ -160,6 +160,7 @@ int main(int argc, char *argv[])
                         exit(1);
                     }
                 } else if (pid == 0) {
+                    prctl(PR_SET_PDEATHSIG, SIGHUP);
                     for (int fd = 0; fd < 256; close(fd++));
                     char *argv[msg.u.argc + 1];
                     int i = 0;

@@ -1,0 +1,34 @@
+#!/system/bin/sh
+
+while ((1))
+do
+    result1=`getprop dhcp.eth0.result`
+    result2=`getprop dhcp.wlan0.result`
+    echo "$result1 $result2"
+    if [[ x$result1 == xok || x$result2 == xok ]]
+    then
+       break;
+    fi
+    sleep 1
+done
+
+if [[ ! -d /data/homebrain ]]
+then
+    mkdir -p /data/homebrain
+fi
+
+dt=`date +%Y%m%d-%H:%M:%S`
+echo $dt >> /data/homebrain/startup.count
+
+# -d: configure root dir
+# -h: hue bridge configure file
+# -t: smarthb sleep time seconds after bridge startup
+# -u: kk bridge user
+# -k: kk bridge key
+
+#smarthb -B -d /data/homebrain -h hue_bridge.conf -t 10 -u 03633 -k E1329393DADAB51CE6705DEC5D25D20C
+#smarthb -B -d /data/homebrain -h hue_bridge.conf -t 10 -u 02169 -k C3E2C6C75DCC222A1472E67B57F05B83
+
+iotsystem
+
+sleep 2

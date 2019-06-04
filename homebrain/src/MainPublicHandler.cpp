@@ -17,6 +17,9 @@
 #include "HBDeviceManager.h"
 #include "HBHelper.h"
 
+#include "GatewayAgentHandler.h"
+#include "GatewayConnectTable.h"
+
 #ifdef ENABLE_MONITOR_TOOL
 #include "MonitorTool.h"
 #endif
@@ -46,7 +49,36 @@ MainPublicHandler::~MainPublicHandler()
 
 }
 
-void MainPublicHandler::doDeviceEvent(Message *msg)
+void MainPublicHandler::doNetworkSuccess()
+{
+    /* query bridge and start */
+    std::vector<GatewayTableInfo> bridges;
+    GatewayTableInfo filter;
+    filter.nEnable = 1;
+    mainDB().queryBy(bridges, filter);
+    for (size_t i = 0; i < bridges.size(); ++i) {
+        startBridge(bridges[i].nType.c_str(), bridges[i].nGid.c_str(),
+            bridges[i].nKey.c_str(), bridges[i].nIp.c_str());
+    }
+
+    /* start homebrain super gateway */
+    GAHandler().sendEmptyMessage(GA_NETWORK_OK);
+}
+
+void MainPublicHandler::onNetworkEvent(Message *msg)
+{
+    if (msg->arg1 != NETWORK_EVENT_CONNECT)
+        return;
+    switch (msg->arg2) {
+        case NETWORK_CONNECT_SUCCESS:
+            doNetworkSuccess();
+            break;
+        default:
+            break;
+    }
+}
+
+void MainPublicHandler::onDeviceEvent(Message *msg)
 {
     switch (msg->arg1) {
         case DEVICE_STATUS_UNKOWN:
@@ -60,7 +92,7 @@ void MainPublicHandler::doDeviceEvent(Message *msg)
 }
 
 #ifdef ENABLE_MONITOR_TOOL
-void MainPublicHandler::doMonitorEvent(Message *msg)
+void MainPublicHandler::onMonitorEvent(Message *msg)
 {
     switch (msg->arg1) {
         case MONITOR_CLOSE_CLIENT:
@@ -73,7 +105,7 @@ void MainPublicHandler::doMonitorEvent(Message *msg)
 #endif
 
 #ifdef SIM_SUITE
-void MainPublicHandler::doSimulateEvent(Message *msg)
+void MainPublicHandler::onSimulateEvent(Message *msg)
 {
     /* TODO only for test */
     tempSimulateTest(msg);
@@ -84,6 +116,9 @@ void MainPublicHandler::handleMessage(Message *msg)
 {
     LOGD("msg: [%d] [%d] [%d]\n", msg->what, msg->arg1, msg->arg2);
     switch (msg->what) {
+        case MT_NETWORK:
+            onNetworkEvent(msg);
+            break;
         case MT_DB:
             if (msg->arg1 == DB_CLOSE)
                 mainDB().close();
@@ -91,16 +126,16 @@ void MainPublicHandler::handleMessage(Message *msg)
         case MT_RULE:
             break;
         case MT_DEVICE:
-            doDeviceEvent(msg);
+            onDeviceEvent(msg);
             break;
 #ifdef ENABLE_MONITOR_TOOL
         case MT_MONITOR:
-            doMonitorEvent(msg);
+            onMonitorEvent(msg);
             break;
 #endif
 #ifdef SIM_SUITE
         case MT_SIMULATE:
-            doSimulateEvent(msg);
+            onSimulateEvent(msg);
             break;
 #endif
         default:

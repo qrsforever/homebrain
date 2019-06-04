@@ -1,0 +1,26 @@
+{
+    "devicetype": "oic.d.kk_scenectrl",
+    "devicename": "控客场景面板",
+    "manufacture": "Konke",
+    "version": "0.9.2",
+    "profile": {
+        "OnlineState": {
+            "tag": "在线状态",
+            "write": "F",
+            "type": "enum",
+            "read": "T",
+            "range": {
+                "0": "离线",
+                "1": "在线"
+            }
+        },
+        "scene": {
+            "tag": "场景设置",
+            "read": "T",
+            "write": "T",
+            "type": "int",
+            "range": "v >= 0 and v <= 3",
+            "unit": ""
+        }
+    }
+}

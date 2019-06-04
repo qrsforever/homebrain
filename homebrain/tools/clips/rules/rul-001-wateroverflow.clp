@@ -1,0 +1,26 @@
+(defrule rul-001-wateroverflow
+    ?sct <- (object (is-a SceneContext)
+         (where room0) (target wateroverflow) (action ?action)
+         (services $?svrs)
+    )
+    ?light1 <- (object (is-a oic.d.light)
+        (ID ?did &:(eq ?did ins-00a17a88-a01a-02a1-4af9)))
+  =>
+    (bind ?c (create-rule-context rul-001-wateroverflow))
+    (logi "scene wateroverflow, action: " ?action)
+    (if (eq ?action exit)
+     then
+        (foreach ?sname (create$ $?svrs)
+            (logd "stop service: " ?sname)
+            (assert (stop-service ?sname))
+        )
+        (return)
+    )
+    (if (eq ?action enter)
+     then
+        (bind ?etime (+ 30000 (nth$ 1 (now))))
+        (bind ?hue 250)
+        (bind ?sat 250)
+        (assert (start-service ?sct alarmlight:1 ?etime ?did ?hue ?sat))
+    )
+)

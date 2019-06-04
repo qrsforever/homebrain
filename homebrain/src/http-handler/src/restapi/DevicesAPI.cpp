@@ -221,6 +221,35 @@ static void _unbind(const crow::request& req, crow::response& res)
     return ;
 }/*}}}*/
 
+static void _delete(const crow::request& req, crow::response& res)
+{/*{{{*/
+    DeviceStatusResult status(req, res);
+
+    Document doc;
+    doc.Parse(req.body.c_str());
+
+    if (doc.HasParseError()) {
+        status.setStatusCode(-1002);
+        return;
+    }
+
+    Value& deviceId = doc["deviceId"];
+    if (!deviceId.IsString()) {
+        status.setStatusCode(-1002);
+        return;
+    }
+    int ret = deviceManager().SetDeviceOwnedStatus(deviceId.GetString(),  HB_DEVICE_UNBINDED);
+    if (0 == ret) {
+       ret = deviceManager().DeleteDevice(deviceId.GetString());
+        if (0 == ret) {
+            status.setStatusCode(0, "\"result\":{\"ret\": \"success\"}");
+            return;
+        }
+    }
+    status.setStatusCode(-1301);
+    return ;
+}/*}}}*/
+
 static void _isonline(const crow::request& req, crow::response& res)
 {/*{{{*/
     DeviceStatusResult status(req, res);
@@ -401,6 +430,7 @@ extern void initDevicesAPI(APP& app)
     CROW_ROUTE(app, "/api/familydevice/list").methods(REST_POST)(_list);
     CROW_ROUTE(app, "/api/familydevice/bind").methods(REST_POST)(_bind);
     CROW_ROUTE(app, "/api/familydevice/unbind").methods(REST_POST)(_unbind);
+    CROW_ROUTE(app, "/api/familydevice/delete").methods(REST_POST)(_delete);
     CROW_ROUTE(app, "/api/familydevice/isonline").methods(REST_POST)(_isonline);
     CROW_ROUTE(app, "/api/familydevice/profile").methods(REST_POST)(_profile);
     CROW_ROUTE(app, "/api/familydevice/status").methods(REST_POST)(_status);

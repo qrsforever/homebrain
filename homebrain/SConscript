@@ -10,12 +10,12 @@ target_arch = env.get('TARGET_ARCH')
 top_dir = env.get('SRC_DIR')
 homebrain_env = env.Clone()
 
-platform = os.environ.get("PROJECT_PRLATFORM")
+platform = os.environ.get("PROJECT_PLATFORM")
 
 if platform:
-    homebrain_env["PROJECT_PRLATFORM"] = platform
+    homebrain_env["PROJECT_PLATFORM"] = platform
 else:
-    homebrain_env["PROJECT_PRLATFORM"] = "unkown"
+    homebrain_env["PROJECT_PLATFORM"] = "unkown"
 
 homebrain_env.AppendUnique(CXXFLAGS = [
     '-fpermissive',
@@ -81,6 +81,7 @@ homebrain_env.PrependUnique(LIBS=[
 if target_arch in ['x86_64']:
     homebrain_env.AppendUnique(LIBS=['sqlite3'])
 
+SConscript('build/SConscript')
 SConscript('external/SConscript', 'homebrain_env')
 SConscript('src/SConscript', 'homebrain_env')
 SConscript('examples/SConscript', 'homebrain_env')

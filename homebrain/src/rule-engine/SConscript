@@ -16,6 +16,7 @@ rule_engine_env.AppendUnique(CPPPATH = [
     'RuleDriver/src/tables',
     'Clipscpp/src',
     'Payload/src',
+    '../storage-tables/src',
     '../device-manager/include',
     '../cloud-manager/',
 ])
@@ -23,6 +24,7 @@ rule_engine_env.AppendUnique(CPPPATH = [
 rule_engine_env.AppendUnique(LIBS=[
     'clips',
     'device_manager',
+    'hbstoragetable',
 ])
 
 rule_engine_env.AppendUnique(RPATH = [rule_engine_env.get('BUILD_DIR')])
@@ -58,12 +60,6 @@ ruledriver_src = [
     'DeviceDataChannel.cpp',
     'CloudDataChannel.cpp',
     'RuleEngineLog.cpp',
-    # 'RuleDriver/src/RuleEngineStore.cpp',
-    # 'RuleDriver/src/tables/DefTable.cpp',
-    # 'RuleDriver/src/tables/DefTemplateTable.cpp',
-    # 'RuleDriver/src/tables/DefClassTable.cpp',
-    # 'RuleDriver/src/tables/DefRuleTable.cpp',
-    # 'RuleDriver/src/tables/TimerEventTable.cpp',
 ]
 
 shared_libRE = rule_engine_env.SharedLibrary('HB_RuleEngine', [clipscpp_src, ruledriver_src])

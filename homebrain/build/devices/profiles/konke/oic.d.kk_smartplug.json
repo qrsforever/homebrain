@@ -1,0 +1,29 @@
+{
+    "devicetype": "oic.d.kk_smartplug",
+    "devicename": "控客智能插销",
+    "manufacture": "Konke",
+    "version": "0.9.2",
+    "profile": {
+        "OnlineState": {
+            "tag": "在线状态",
+            "write": "F",
+            "type": "enum",
+            "read": "T",
+            "range": {
+                "0": "离线",
+                "1": "在线"
+            }
+        },
+        "value": {
+            "tag": "智能插销",
+            "read": "T",
+            "write": "T",
+            "type": "boolean",
+            "range": {
+                "0": "关闭",
+                "1": "开启"
+            },
+            "unit": ""
+        }
+    }
+}

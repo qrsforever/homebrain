@@ -1,0 +1,97 @@
+##
+# Home Brain Main Test
+##
+
+import os
+import shutil
+Import('env')
+
+hb_env = env.Clone()
+
+target_os = hb_env.get('TARGET_OS')
+
+hb_env.AppendUnique(CPPPATH = [
+    '.',
+    '#/resource/IPCA/inc',
+    '#/resource/include/',
+    '#/resource/csdk/include',
+    '#/resource/csdk/stack/include',
+    '#/resource/IPCA/inc',
+    '#/resource/oc_logger/include',
+    '#/resource/csdk/connectivity/api',
+    '#/resource/csdk/connectivity/external/inc',
+    '#/resource/csdk/ocsocket/include',
+    '#/resource/csdk/logger/include',
+    '#/extlibs/sqlite3',
+    '#/extlibs/rapidjson/rapidjson/include',
+    '#homebrain/external/clips/core',
+    '#homebrain/src/utils/Log/src',
+    '#homebrain/src/utils/Message/src',
+    '#homebrain/src/utils/Misc/src',
+    '#homebrain/src/utils/SQLite/src',
+    '#homebrain/src/rule-engine',
+    '#homebrain/src/rule-engine/RuleDriver/src',
+    '#homebrain/src/rule-engine/RuleDriver/src/tables',
+    '#homebrain/src/rule-engine/Clipscpp/src',
+    '#homebrain/src/rule-engine/Payload/src',
+    '#homebrain/src/device-manager/include',
+    '#homebrain/src/cloud-manager/',
+    '#homebrain/external/lecloud',
+    '#homebrain/external/lecloud/include',
+])
+
+hb_env.AppendUnique(CXXFLAGS = [
+    '-Wno-error=unused-variable',
+    '-Wno-error=unused-parameter',
+    '-Wno-error=unused-but-set-variable',
+])
+
+hb_env.AppendUnique(CXXFLAGS = ['-std=c++0x', '-Wall', '-Wextra'])
+
+if not hb_env.get('RELEASE'):
+    hb_env.AppendUnique(CPPDEFINES = ['DEBUG'])
+
+if target_os == 'android':
+    hb_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions'])
+    hb_env.AppendUnique(LIBS = ['gnustl_shared'])
+    if hb_env.get('RELEASE'):
+        hb_env.AppendUnique(LIBS = ['le_Arm64Android'])
+    else:
+        hb_env.AppendUnique(LIBS = ['le_Arm64Android_debug'])
+
+if target_os == 'linux':
+    hb_env.AppendUnique(CXXFLAGS = ['--coverage'])
+    if hb_env.get('RELEASE'):
+        hb_env.AppendUnique(LIBS = ['le_x86_64_linux_debug', 'HB_LeCloud'])
+    else:
+        hb_env.AppendUnique(LIBS = ['le_x86_64_linux_debug'])
+
+
+hb_env.AppendUnique(RPATH = [hb_env.get('BUILD_DIR')])
+
+hb_env.AppendUnique(LIBS=[
+    'gcov',
+    'clips',
+    'sqlite3',
+    'ipca',
+    'HB_Utils',
+    'HB_RuleEngine',
+    'device_manager',
+])
+
+hb_env.AppendUnique(CPPDEFINES = ['USE_SHARED_PTR'])
+hb_env.AppendUnique(CPPDEFINES = ['HAVE_CLOUD_MANAGER'])
+
+cloud_sdk_dir='#/homebrain/external/lecloud'
+hb_env.Program('homebrain', [
+    'HomeBrainMain.cpp',
+    os.path.join(cloud_sdk_dir, 'main.cpp'),
+    os.path.join(cloud_sdk_dir, 'lecloud_interface.cpp'),
+]
+)
+
+curdir = os.path.join(hb_env.get('SRC_DIR'), 'homebrain', 'examples', 'hb', 'clips')
+dstdir = os.path.join(hb_env.get('BUILD_DIR'), 'homebrain', 'examples', 'hb', 'clips')
+if os.path.isdir(dstdir):
+    shutil.rmtree(dstdir)
+shutil.copytree(curdir, dstdir, 1)

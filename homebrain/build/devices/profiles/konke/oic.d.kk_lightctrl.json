@@ -1,0 +1,55 @@
+{
+    "devicetype": "oic.d.kk_lightctrl",
+    "devicename": "控客3T灯控",
+    "manufacture": "Konke",
+    "version": "0.9.2",
+    "iconid": "ic_default_light",
+    "profile": {
+        "OnlineState": {
+            "tag": "在线状态",
+            "write": "F",
+            "read": "T",
+            "type": "enum",
+            "range": {
+                "0": "离线",
+                "1": "在线"
+            }
+        },
+        "value1": {
+            "rt": "oic.r.switch.binary",
+            "iconid": "ic_default_switch",
+            "tag": "开关状态1",
+            "read": "T",
+            "write": "T",
+            "type": "boolean",
+            "range": {
+                "0": "关闭",
+                "1": "开启"
+            }
+        },
+        "value2": {
+            "rt": "oic.r.switch.binary",
+            "iconid": "ic_default_switch",
+            "tag": "开关状态2",
+            "read": "T",
+            "write": "T",
+            "type": "boolean",
+            "range": {
+                "0": "关闭",
+                "1": "开启"
+            }
+        },
+        "value3": {
+            "rt": "oic.r.switch.binary",
+            "iconid": "ic_default_switch",
+            "tag": "开关状态3",
+            "read": "T",
+            "write": "T",
+            "type": "boolean",
+            "range": {
+                "0": "关闭",
+                "1": "开启"
+            }
+        }
+    }
+}

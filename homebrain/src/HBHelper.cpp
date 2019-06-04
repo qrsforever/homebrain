@@ -241,8 +241,8 @@ int lightSystemCall(int what, int argc, char *args[])
     return msg.u.result;
 }/*}}}*/
 
-int startBridge(const char* bridgeType, const char *bridgeId, const char *accessKey)
-{
+int startBridge(const char* bridgeType, const char *bridgeId, const char *accessKey, const char *ip)
+{/*{{{*/
     if (!bridgeType || !bridgeId || !accessKey)
         return -1;
 
@@ -253,22 +253,24 @@ int startBridge(const char* bridgeType, const char *bridgeId, const char *access
         char *args[] = {(char*)"kk_bridge", (char*)bridgeId, (char*)accessKey};
         pid = lightSystemCall(MSG_SYSTEM_CALL, 3, args);
     } else if (!strncmp(bridgeType, "hue", 3)) {
-        char *args[] = {(char*)"hue_bridge", (char*)"-c", (char*)accessKey};
-        pid = lightSystemCall(MSG_SYSTEM_CALL, 3, args);
+        char *args[] = {(char*)"hue_bridge", (char*)"-u", (char*)bridgeId,
+            (char*)"-k", (char*)accessKey, (char*)"-s", (char*)ip
+        };
+        pid = lightSystemCall(MSG_SYSTEM_CALL, 7, args);
     }
     if (pid > 0) {
         gBridges[bridgeId] = pid;
         return pid;
     }
     return -1;
-}
+}/*}}}*/
 
 int killBridge(const char *bridgeId)
-{
+{/*{{{*/
     auto it = gBridges.find(bridgeId);
     if (it != gBridges.end())
         kill(it->second, SIGKILL);
     return 0;
-}
+}/*}}}*/
 
 } /* namespace HB */

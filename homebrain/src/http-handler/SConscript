@@ -11,6 +11,7 @@ http_env.AppendUnique(CPPPATH = [
     '..',
     'src',
     'src/restapi',
+    '../storage-tables/src',
     '../rule-engine',
     '../rule-engine/RuleDriver/src',
     '../rule-engine/Payload/src',
@@ -31,9 +32,10 @@ http_handler_src = [
     ]
 
 http_env.AppendUnique(LIBS=[
+    'hbstoragetable',
     'HB_Utils',
     'HB_RuleEngine',
 ])
 
-static_libhttp_handler = http_env.StaticLibrary('http_handler', http_handler_src)
-http_env.InstallTarget(static_libhttp_handler , 'http_handler')
+static_libhttp_handler = http_env.StaticLibrary('HB_HttpHandler', http_handler_src)
+http_env.InstallTarget(static_libhttp_handler , 'HB_HttpHandler')

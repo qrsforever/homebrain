@@ -130,6 +130,10 @@ function onUnbindDevice(did) {
     devices.unbind(did);
 }
 
+function onDeleteDevice(did) {
+    devices.delete(did);
+}
+
 function onChangeDeviceName(did, value) {
     devices.changeName(did, value);
 }

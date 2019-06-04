@@ -1,0 +1,10 @@
+######################################################################
+#  homebrain build script
+######################################################################
+
+Import('homebrain_env')
+
+SConscript('iotivity/SConscript')
+# SConscript('ipca/SConscript', 'homebrain_env')
+# SConscript('hb/SConscript')
+# SConscript('crow/SConscript')

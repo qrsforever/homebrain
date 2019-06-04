@@ -1,0 +1,9 @@
+######################################################################
+#  build script
+######################################################################
+
+import os
+
+platform = os.environ.get("PROJECT_PLATFORM")
+
+SConscript(os.path.join('platforms', platform, 'SConscript'))

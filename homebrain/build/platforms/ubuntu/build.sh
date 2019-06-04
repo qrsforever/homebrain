@@ -23,10 +23,11 @@ __main() {
 
     export TARGET_OS=linux
     export TARGET_ARCH=x86_64
+    export PROJECT_PLATFORM=$platform
 
     if [[ -f $current_dir/prebuild.sh ]]
     then
-        $current_dir/prebuild.sh $pro_top_dir
+        $current_dir/prebuild.sh $pro_top_dir $platform
     fi
 
     if [[ x$? != x0 ]]

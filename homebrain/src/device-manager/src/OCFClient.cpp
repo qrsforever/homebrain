@@ -37,12 +37,11 @@
 #include "Common.h"
 #include "OCFClient.h"
 #include "HBDeviceManagerLog.h"
-
 #define UNUSED_PARAMETER(P)       (void)(P)
 #define MAX_TIME_OUT_MS    (3*1000)
 #define MIN_TIME_OUT_MS    (1*1000)
 #define DEVICE_DID_LENTH    23
-
+#define HOST_DEV_NAME "HomeBrain"
 //FIXME: temporary WR, remove this later
 //#define TV_HEARTBEAT_CHECK_ONLINE 1
 
@@ -139,9 +138,10 @@ void IPCA_CALL ResourceChangeNotificationCallback(
             LOGW("ResourceChangeNotificationCallback(): device appears offline. deviceId: %s\n", (*deviceId).c_str());
             OCFDeviceCallBackHandler* pCallback = client->GetCallback();
             if (pCallback != nullptr) {
-                pCallback->onOCFDeviceStatusChanged(*deviceId, "", "unkown_error");
+                //pCallback->onOCFDeviceStatusChanged(*deviceId, "", "unkown_error");
+                OCFDevice::Ptr device = GetDeviceById(*deviceId);
+                pCallback->onOCFDeviceStatusChanged(*deviceId, device->m_deviceType, "offline");
             }
-            //client->DiscoverDevices();
         }
         return;
     }
@@ -167,6 +167,15 @@ void IPCA_CALL DiscoverDevicesCallback(
         const IPCADiscoveredDeviceInfo* deviceInfo)
 {
     UNUSED_PARAMETER(context);
+
+    //FIXME: return if deviceinfo is not ready.
+    if (deviceStatus != IPCA_DEVICE_STOPPED_RESPONDING &&
+            deviceInfo->deviceUriCount == 0)
+        return;
+
+    //skip host
+    if (strncmp(deviceInfo->deviceName, HOST_DEV_NAME, sizeof(HOST_DEV_NAME)) == 0)
+        return;
 
     std::string deviceIdInter = deviceInfo->deviceId;
     std::string deviceId;
@@ -210,7 +219,7 @@ void IPCA_CALL DiscoverDevicesCallback(
             // FIXME: device no longer exist, no need to notify server 
             /*if (device->m_observeHandle != nullptr)
               IPCACloseHandle(device->m_observeHandle, nullptr, 0);*/
-            g_OCFDeviceList.erase(deviceId);
+            //g_OCFDeviceList.erase(deviceId);
         }
         return;
     }
@@ -259,6 +268,7 @@ void IPCA_CALL DiscoverDevicesCallback(
         if ((knownProperties.size() == 0) &&
                 (IPCA_OK != client->GetDeviceProperties_Impl(deviceId))) {
             LOGW("GetDeviceProperties failed! deviceId: %s\n", deviceId.c_str());
+            g_OCFDeviceList.erase(deviceId);
         }
     }
 
@@ -396,6 +406,8 @@ void IPCA_CALL GetPropertiesCallback(
 
     if (result != IPCA_OK) {
         std::cout << "GetPropertiesCallback(): error: " << result << std::endl;
+        // need to remove this device if its properties is not valid
+        g_OCFDeviceList.erase(ctx->deviceId);
         g_getPropertiesCompleteCV.notify_all();
         return;
     }
@@ -574,7 +586,7 @@ IPCAStatus OCFClient::Init()
                         0xae, 0x22, 0x56, 0xb6, 0xb6, 0x49, 0x96, 0x11}
                      };
 
-    IPCAAppInfo ipcaAppInfo = { appId, "HB_Client", "1.0.0", "LeTV" };
+    IPCAAppInfo ipcaAppInfo = { appId, HOST_DEV_NAME, "1.0.0", "LeTV" };
 
     IPCAStatus status = IPCA_OK;
     if (m_initialized) {
@@ -911,14 +923,14 @@ IPCAStatus OCFClient::GetDeviceProperties_Impl(std::string deviceId)
         g_contexts.push_back(ctx);
     }
 
-    IPCAStatus getStatus = IPCAGetProperties(device->m_deviceHandle,
+    status = IPCAGetProperties(device->m_deviceHandle,
             &GetPropertiesCallback,
             reinterpret_cast<void*>(ctx),
             device->m_resourceUri.c_str(),
             nullptr,
             nullptr,
             nullptr);
-    if (IPCA_OK == getStatus) {
+    if (IPCA_OK == status) {
         if ( std::cv_status::timeout == g_getPropertiesCompleteCV.wait_for(
                 get_lock, std::chrono::milliseconds{ MAX_TIME_OUT_MS })) {
             status = IPCA_REQUEST_TIMEOUT;
@@ -956,6 +968,8 @@ IPCAStatus OCFClient::GetDeviceProperties(std::string deviceId, std::map<std::st
         properties.erase("n");
         properties.erase("online");
         properties.erase("observers");
+        properties.erase("trigger_net");
+        properties.erase("delete_device");
         std::cout << "GetDeviceProperties() : successful " << std::endl;
     }
 
@@ -1017,7 +1031,7 @@ IPCAStatus OCFClient::GetDevicePropertyValue(std::string deviceId, std::string p
         g_propertyValue.clear();
     } else {
         status = IPCA_FAIL;
-        std::cout << "GetDevicePropertyValue() : failed." << std::endl;
+        std::cout << "GetDevicePropertyValue() : failed. property_key= " << property_key.c_str() << std::endl;
     }
 
 exit:
@@ -1063,7 +1077,9 @@ IPCAStatus OCFClient::NotifyDeviceProperties(
         propertyKey = it->first;
 
         if (propertyKey.compare("n") == 0 ||
-                propertyKey.compare("observers") == 0)
+                propertyKey.compare("observers") == 0 ||
+                propertyKey.compare("trigger_net") == 0 ||
+                propertyKey.compare("delete_device") == 0)
             continue;
 
         if (propertyKey.compare("online") == 0) {
@@ -1196,6 +1212,16 @@ OCFDevice::Ptr OCFClient::GetGatewayById(std::string gatewayId)
     }
 
     return nullptr;
+}
+
+IPCAStatus OCFClient::DeleteDevice(std::string deviceId)
+{
+    OCFDevice::Ptr device = GetDeviceById(deviceId);
+    if (device->m_observeHandle != nullptr)
+        IPCACloseHandle(device->m_observeHandle, nullptr, 0);
+    g_OCFDeviceList.erase(deviceId);
+
+    return IPCA_OK;
 }
 
 void OCFClient::SetCallback(OCFDeviceCallBackHandler* callback)

@@ -9,10 +9,12 @@ Import('homebrain_env')
 
 SConscript('ipc-system/SConscript')
 SConscript('utils/SConscript')
+SConscript('storage-tables/SConscript', 'homebrain_env')
 SConscript('device-manager/SConscript', 'homebrain_env')
 SConscript('cloud-manager/SConscript', 'homebrain_env')
 SConscript('rule-engine/SConscript', 'homebrain_env')
 SConscript('http-handler/SConscript', 'homebrain_env')
+SConscript('gateway-agent/SConscript', 'homebrain_env')
 
 hb_env = homebrain_env.Clone()
 
@@ -37,9 +39,11 @@ hb_env.AppendUnique(CPPPATH = [
     'http-handler/src/',
     'ipc-system/src',
     'cloud-manager/',
+    'storage-tables/src',
+    'gateway-agent/src',
 ])
 
-if hb_env["PROJECT_PRLATFORM"] in ['mstart648']:
+if hb_env["PROJECT_PLATFORM"] in ['mstart648']:
     if hb_env.get('LECLOUD_VERSION') == '2':
         cloud_sdk_dir='#/homebrain/external/lecloud2'
         hb_env.AppendUnique(LIBS = ['le_Arm64Android_gw_debug'])
@@ -56,25 +60,26 @@ hb_env.AppendUnique(LIBS=[
     'gcov',
     'clips',
     'ipca',
+    'boost_system',
+    'device_manager',
+])
+
+# must place hbstoragetable before sqlite3, gcc link from right to left
+hb_env.PrependUnique(LIBS=[
+    'HB_HttpHandler',
+    'HB_StorageTable',
     'HB_RuleEngine',
     'HB_LeCloud',
-    'device_manager',
-    'boost_system',
-    'http_handler',
+    'HB_GWAgent',
 ])
 
 main_src = [
     'MainPublicHandler.cpp',
     'HBHelper.cpp',
-    'HBDatabase.cpp',
-    'HBGlobalTable.cpp',
-    'RuleEngineTable.cpp',
-    'DeviceProfileTable.cpp',
-    'GatewayConnectTable.cpp',
     'HomeBrainMain.cpp',
 ]
 
-if hb_env["PROJECT_PRLATFORM"] in ['linux', 'mstart648', 'kk']:
+if hb_env["PROJECT_PLATFORM"] in ['linux', 'mstart648']:
     hb_env.AppendUnique(CPPDEFINES = ['ENABLE_MONITOR_TOOL'])
     main_src.append('MonitorTool.cpp')
     main_src.append(os.path.join(cloud_sdk_dir, 'main.cpp'))

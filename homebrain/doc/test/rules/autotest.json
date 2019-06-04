@@ -1,0 +1,42 @@
+{
+    "sceneId": "-",
+    "sceneName": "autotest",
+    "description": "当环境传感器监控流明值小于等于35则打开灯",
+    "trigger": {
+        "switch": {
+            "enabled": "on",
+            "notify": "off",
+            "timeCondition": "off",
+            "deviceCondition": "on",
+            "manual": "on"
+        },
+        "triggerType": "auto|manual"
+    },
+    "conditions": {
+        "conditionLogic": "",
+        "deviceCondition": {
+            "deviceStatus": [
+                {
+                    "propValue": "v<=35",
+                    "deviceId": "00124b00-12cc-8000-d0d0",
+                    "propName": "illuminance"
+                }
+            ],
+            "deviceLogic": ""
+        }
+    },
+    "actions": {
+        "deviceControl": [
+            {
+                "propValue": "1",
+                "deviceId": "00124b00-19a8-9215-d0d0",
+                "propName": "value1"
+            },
+            {
+                "propValue": "1",
+                "deviceId": "00124b00-19a8-9215-d0d0",
+                "propName": "value2"
+            }
+        ]
+    }
+}

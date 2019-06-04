@@ -1,0 +1,45 @@
+######################################################################
+#  build mqtt script
+######################################################################
+
+import os
+
+Import('env')
+
+mqtt_env = env.Clone()
+
+top_dir = env.get('SRC_DIR')
+platform = os.environ.get("PROJECT_PRLATFORM")
+
+# mqtt_dir = os.path.join(top_dir, 'out', platform, 'extlibs/mqtt', 'paho.mqtt.embedded-c-1.1.0')
+mqtt_dir = 'paho.mqtt.embedded-c-1.1.0'
+mqtt_src_dir = os.path.join(mqtt_dir, 'MQTTPacket/src')
+
+mqtt_env.AppendUnique(CPPPATH = [ mqtt_src_dir ])
+
+mqtt_env.AppendUnique(CDEFINES = ['MQTT_CLIENT'])
+
+mqtt_core_src = [
+    os.path.join(mqtt_src_dir, 'MQTTFormat.c'),
+    os.path.join(mqtt_src_dir, 'MQTTPacket.c'),
+    os.path.join(mqtt_src_dir, 'MQTTSerializePublish.c'),
+    os.path.join(mqtt_src_dir, 'MQTTDeserializePublish.c'),
+    os.path.join(mqtt_src_dir, 'MQTTConnectClient.c'),
+    os.path.join(mqtt_src_dir, 'MQTTSubscribeClient.c'),
+    os.path.join(mqtt_src_dir, 'MQTTUnsubscribeClient.c'),
+]
+
+static_libmqtt = mqtt_env.StaticLibrary('MQTTPacketClient', mqtt_core_src)
+mqtt_env.InstallTarget(static_libmqtt, 'MQTTPacketClient')
+
+# install header files
+mqtt_core_header = [
+    os.path.join(mqtt_src_dir, 'MQTTConnect.h'),
+    os.path.join(mqtt_src_dir, 'MQTTFormat.h'),
+    os.path.join(mqtt_src_dir, 'MQTTPacket.h'),
+    os.path.join(mqtt_src_dir, 'MQTTPublish.h'),
+    os.path.join(mqtt_src_dir, 'MQTTSubscribe.h'),
+    os.path.join(mqtt_src_dir, 'MQTTUnsubscribe.h'),
+    os.path.join(mqtt_src_dir, 'StackTrace.h'),
+]
+mqtt_env.UserInstallTargetHeader(mqtt_core_header, '', '')

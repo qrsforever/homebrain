@@ -1,0 +1,8 @@
+mosquitto_sub -d -v -q 1 -h $ELINK_HOST -p $ELINK_POST -i $ELINK_ID -u $ELINK_ID -P $DEVICE_SECRET -t $SUB_TOPIC_REGISTER_SUBDEV_REPLY 
+
+mosquitto_pub -d -q 1 -h $ELINK_HOST -p $ELINK_POST -i $ELINK_ID -u $ELINK_ID -P $DEVICE_SECRET -t $PUB_TOPIC_REGISTER_SUBDEV -f register_tv_device.json
+
+mosquitto_sub -d -v -q 1 -h $ELINK_HOST -p $ELINK_POST -i $ELINK_ID -u $ELINK_ID -P $DEVICE_SECRET -t $SUB_TOPIC_ADD_TOPO_REPLY
+     
+mosquitto_pub -d -q 1 -h $ELINK_HOST -p $ELINK_POST -i $ELINK_ID -u $ELINK_ID -P $DEVICE_SECRET -t $PUB_TOPIC_ADD_TOPO -f add_topo.json
+

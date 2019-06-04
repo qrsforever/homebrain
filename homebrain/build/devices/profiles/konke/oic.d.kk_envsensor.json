@@ -1,0 +1,48 @@
+{
+    "devicetype": "oic.d.kk_envsensor",
+    "devicename": "控客环境传感器",
+    "manufacture": "Konke",
+    "version": "0.9.2",
+    "profile": {
+        "OnlineState": {
+            "tag": "在线状态",
+            "write": "F",
+            "read": "T",
+            "type": "enum",
+            "range": {
+                "0": "离线",
+                "1": "在线"
+            }
+        },
+        "humidity": {
+            "rt": "oic.r.humidity",
+            "iconid": "ic_icons_humidifier",
+            "tag": "湿度",
+            "write": "F",
+            "read": "T",
+            "type": "int",
+            "range": "v >= 0 and v <= 100",
+            "unit": "%"
+        },
+        "illuminance": {
+            "rt": "oic.r.sensor.illuminance",
+            "iconid": "ic_icons_sensor_illuminance",
+            "tag": "流明值",
+            "write": "F",
+            "read": "T",
+            "type": "int",
+            "range": "v >= 0 and v <= 999",
+            "unit": "m"
+        },
+        "temperature": {
+            "rt": "oic.r.temperature",
+            "iconid": "ic_default_temperature",
+            "tag": "温度",
+            "write": "F",
+            "read": "T",
+            "type": "int",
+            "range": "v >= 0 and v <= 100",
+            "unit": "℃"
+        }
+    }
+}

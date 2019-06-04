@@ -19,7 +19,7 @@
 
 #define PATH_SIZE 128
 #define ARG_SIZE 64
-#define ARG_COUNT 6
+#define ARG_COUNT 8
 
 typedef struct {
     long what;
