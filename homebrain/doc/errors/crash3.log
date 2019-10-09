@@ -1,0 +1,12 @@
+(gdb) bt
+#0  0x0000007fb7732d14 in CAHandleRequestResponseCallbacks () from
+/home/hj/root/usr/lib/libconnectivity_abstraction.so
+#1  0x0000007fb7731744 in CAHandleRequestResponse () from
+/home/hj/root/usr/lib/libconnectivity_abstraction.so
+#2  0x0000007fb76ea990 in OCProcess () from /home/hj/root/usr/lib/liboctbstack.so
+#3  0x0000007fb77b26b4 in OC::InProcServerWrapper::processFunc() () from /home/hj/root/usr/lib/liboc.so
+#4  0x0000007fb7a5c460 in execute_native_thread_routine () from /home/hj/libdevice_manager.so
+#5  0x0000007fb7b2de34 in start_thread (arg=0x7f9cfff1c0) at pthread_create.c:311
+#6  0x0000007fb78b14f0 in clone () at ../ports/sysdeps/unix/sysv/linux/aarch64/nptl/../clone.S:96
+(gdb) 
+

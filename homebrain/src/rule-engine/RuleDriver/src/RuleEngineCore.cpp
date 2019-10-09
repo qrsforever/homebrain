@@ -312,6 +312,12 @@ std::string RuleEngineCore::getObjectValue(const char *insName, const char *slot
     return std::move(res);
 }
 
+void RuleEngineCore::reset()
+{
+    // mEnv->reset();  // TODO call this will unkown crash
+    onCallReset(); // TODO, need called by clp script, but reset will crash
+}
+
 bool RuleEngineCore::handleTimer()
 {
     Mutex::Autolock _l(&mEnvMutex);
@@ -347,7 +353,7 @@ std::string RuleEngineCore::handleClassSync(const char *clsName, const char *bui
     if (!clsName || !buildStr)
         return std::string("");
 
-    RE_LOGD("(%s)\n%s\n", clsName, buildStr);
+    // RE_LOGD("(%s)\n%s\n", clsName, buildStr);
 
     Mutex::Autolock _l(&mEnvMutex);
     Class::pointer cls = mEnv->get_class(clsName);
@@ -383,7 +389,7 @@ std::string RuleEngineCore::handleRuleSync(const char *ruleId, const char *build
     if (!ruleId || !buildStr)
         return std::string("");
 
-    RE_LOGD("(%s)\n%s\n", ruleId, buildStr);
+    // RE_LOGD("(%s)\n%s\n", ruleId, buildStr);
 
     Mutex::Autolock _l(&mEnvMutex);
     Rule::pointer rule = mEnv->get_rule(ruleId);
@@ -468,7 +474,7 @@ bool RuleEngineCore::handleInstancePut(const char *insName, const char *slot, co
     args.append(slot).append(" ").append(value);
     it->second->send("putData", args);
 
-    assertRun("(datetime (now))");
+    // assertRun("(datetime (now))");
     return true;
 }
 
@@ -570,7 +576,8 @@ void RuleEngineCore::onCallClear()
 
 void RuleEngineCore::onCallReset(void)
 {
-    RE_LOGTT();
+    RE_LOGD("onCallReset");
+    assertRun("(load-micro-services)"); // TODO, the best way is from db, then call ruleAdd.
     mHandler.removeMessages(RET_REFRESH_TIMER);
     mHandler.sendEmptyMessage(RET_REFRESH_TIMER);
 }
@@ -627,7 +634,7 @@ Values RuleEngineCore::onCallNow()
 
 void RuleEngineCore::onCallInitFinished()
 {
-
+    RE_LOGI("core init finished\n");
 }
 
 } /* namespace HB */

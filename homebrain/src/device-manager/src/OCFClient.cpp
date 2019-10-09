@@ -37,6 +37,8 @@
 #include "Common.h"
 #include "OCFClient.h"
 #include "HBDeviceManagerLog.h"
+#include "OCFDeviceTable.h"
+#include "HBDatabase.h"
 #define UNUSED_PARAMETER(P)       (void)(P)
 #define MAX_TIME_OUT_MS    (3*1000)
 #define MIN_TIME_OUT_MS    (1*1000)
@@ -47,6 +49,7 @@
 
 using namespace UTILS;
 using namespace OC;
+using namespace HB;
 
 namespace OIC {
 namespace Service {
@@ -59,12 +62,14 @@ std::recursive_mutex g_globalMutex;   // Sync access to g_OCFDeviceList.
 std::recursive_mutex g_contextsMutex;   // Sync access to g_contexts.
 // Key is device id.  Value is OCFDevices.
 std::map<std::string, OCFDevice::Ptr> g_OCFDeviceList;
+std::vector<OCFDeviceTableInfo> g_ownedDeviceList;
 std::vector<CallbackCtx*> g_contexts;
 
 std::condition_variable g_setPropertiesCompleteCV;
 std::condition_variable g_getPropertiesCompleteCV;
 std::condition_variable g_getPropertyValueCompleteCV;
 std::string g_propertyValue;
+pthread_t g_threadId;
 
 OCFClient* OCFClient::m_instance = NULL;
 OCFClient::Garbage OCFClient::m_garbage;
@@ -107,6 +112,28 @@ void* HeartbeatThread (void* para)
 }
 #endif
 
+void* DiscoverDevicesOnce (void* para)
+{
+    usleep(5000*1000);
+    int retry = 3;
+    while (retry-- > 0) {
+        IPCAStatus status = IPCA_OK;
+        OCFClient* client = OCFClient::GetInstance();
+        if (client != NULL)
+            status = client->DiscoverDevices();
+
+        if (status != IPCA_OK) {
+            std::cout << "failed to discover devices." << std::endl;
+        }
+        //interval 15s to next discover
+        usleep(15000*1000);
+    }
+    //stop discovery.
+    if (g_discoverDeviceHandle != nullptr) {
+        IPCACloseHandle(g_discoverDeviceHandle, nullptr, 0);
+    }
+}
+
 OCFDevice::Ptr GetDeviceById(std::string deviceId)
 {
     std::lock_guard<std::recursive_mutex> lock(g_globalMutex);
@@ -141,6 +168,12 @@ void IPCA_CALL ResourceChangeNotificationCallback(
                 //pCallback->onOCFDeviceStatusChanged(*deviceId, "", "unkown_error");
                 OCFDevice::Ptr device = GetDeviceById(*deviceId);
                 pCallback->onOCFDeviceStatusChanged(*deviceId, device->m_deviceType, "offline");
+                device->m_online = 0;
+  
+                if (device->m_observeHandle != nullptr) {
+                    IPCACloseHandle(device->m_observeHandle, nullptr, 0);
+                    device->m_observeHandle = nullptr;
+                }
             }
         }
         return;
@@ -216,10 +249,13 @@ void IPCA_CALL DiscoverDevicesCallback(
             if (pCallback != nullptr) {
                 pCallback->onOCFDeviceStatusChanged(deviceId, ocfDevice->m_deviceType, "offline");
             }
+            ocfDevice->m_online = 0;
             // FIXME: device no longer exist, no need to notify server 
             /*if (device->m_observeHandle != nullptr)
               IPCACloseHandle(device->m_observeHandle, nullptr, 0);*/
             //g_OCFDeviceList.erase(deviceId);
+            //WR for device unknown offline issue. 
+            pCallback->onOCFDeviceStatusChanged(deviceId, ocfDevice->m_deviceType, "unkown_error");
         }
         return;
     }
@@ -250,12 +286,22 @@ void IPCA_CALL DiscoverDevicesCallback(
         std::cout << std::endl;
         std::cout << "   Device Name  . . . . . . :  ";
         std::cout << (di ->deviceName ? di->deviceName : "") << std::endl;
+        ocfDevice->m_deviceName = di->deviceName;
         //std::cout << "   Device Software Version  :  ";
         //std::cout << (di->deviceSoftwareVersion ? di->deviceSoftwareVersion : "") << std::endl;
         std::cout << std::endl;
     }
     else {
         std::cout << "Device Info: Not available."  << std::endl << std::endl;
+    }
+
+    IPCAPlatformInfo* pi = ocfDevice->GetPlatformInfo();
+
+    if (pi != nullptr)
+    {
+        std::cout << "   Manufacturer Name  . . . :  ";
+        std::cout << (pi->manufacturerName ? pi->manufacturerName : "")  << std::endl;
+        ocfDevice->m_manufacture = pi->manufacturerName;
     }
 
     // try to get resource uri.
@@ -276,21 +322,21 @@ void IPCA_CALL DiscoverDevicesCallback(
     //FIXME:
     // Currently we can only get the online state at the beginning.
     // one letv can be thought online when this letv is discovered.
-    if (ocfDevice->m_online == -1) {
     std::string value;
-    if (0 == DEVICE_TYPE::LE_TV.compare(ocfDevice->m_deviceType)) {
+    if (ocfDevice->m_online == -1) {
+        if (0 == DEVICE_TYPE::LE_TV.compare(ocfDevice->m_deviceType)) {
             if (pCallback != nullptr)
                 pCallback->onOCFDeviceStatusChanged(deviceId, ocfDevice->m_deviceType, "online");
             ocfDevice->m_online = 1;
-    } else {
-        if (0 == client->GetDevicePropertyValue(deviceId, "online", value)) {
-            if (value.compare("1") == 0) {
-                ocfDevice->m_online = 1;
-                pCallback->onOCFDeviceStatusChanged(deviceId, ocfDevice->m_deviceType, "online");
-            } else
-                ocfDevice->m_online = 0;
+        } else {
+            if (0 == client->GetDevicePropertyValue(deviceId, "online", value)) {
+                if (value.compare("1") == 0) {
+                    ocfDevice->m_online = 1;
+                    pCallback->onOCFDeviceStatusChanged(deviceId, ocfDevice->m_deviceType, "online");
+                } else
+                    ocfDevice->m_online = 0;
+            }
         }
-    }
     }
 
     // request observe
@@ -298,6 +344,15 @@ void IPCA_CALL DiscoverDevicesCallback(
         if(IPCA_OK != client->RequestObserve(deviceId))
             std::cout << "failed to request observe for device: " << deviceId << std::endl;
         DM_LOGD("RequestObserve sucess. deviceId: %s, uri: %s\n", deviceId.c_str(),ocfDevice->m_resourceUri.c_str());
+    }
+
+    // set owned status
+    for(int i = 0; i < g_ownedDeviceList.size(); i++) {
+        OCFDeviceTableInfo info = g_ownedDeviceList[i];
+        if (info.nDeviceId == deviceId) {
+            ocfDevice->m_ownedStatus = LOCAL_BINDED; 
+            break;
+        }
     }
     /*FIXME: if observer is removed by server, we need re-request observer*/
 #if 0
@@ -600,15 +655,11 @@ IPCAStatus OCFClient::Init()
         return status;
     }
 
-    status = DiscoverDevices();
-    if (status != IPCA_OK) {
-        std::cout << "failed to discover devices." << std::endl;
-    }
+    //init owned device list before discover
+    mainDB().queryBy(g_ownedDeviceList, OCFDeviceTableInfo());
 
-    //FIXME: don't know how many devices need to be discovered.
-    usleep(5000*1000);
-
-    ListenDevices();
+    pthread_create(&g_threadId, NULL, DiscoverDevicesOnce, NULL);
+    //ListenDevices();
 #ifdef TV_HEARTBEAT_CHECK_ONLINE 
     //FIXME: heart beat thread to listen TV's offline.
     pthread_t threadId;
@@ -648,6 +699,7 @@ IPCAStatus OCFClient::Deinit()
         }
         g_propertyValue.clear();
         g_contexts.clear();
+        pthread_join(g_threadId, 0);
         m_initialized = false;
     }
     return IPCA_OK;
@@ -969,6 +1021,7 @@ IPCAStatus OCFClient::GetDeviceProperties(std::string deviceId, std::map<std::st
         properties.erase("online");
         properties.erase("observers");
         properties.erase("trigger_net");
+        properties.erase("refresh_online");
         properties.erase("delete_device");
         std::cout << "GetDeviceProperties() : successful " << std::endl;
     }
@@ -1079,6 +1132,7 @@ IPCAStatus OCFClient::NotifyDeviceProperties(
         if (propertyKey.compare("n") == 0 ||
                 propertyKey.compare("observers") == 0 ||
                 propertyKey.compare("trigger_net") == 0 ||
+                propertyKey.compare("refresh_online") == 0 ||
                 propertyKey.compare("delete_device") == 0)
             continue;
 
@@ -1216,12 +1270,60 @@ OCFDevice::Ptr OCFClient::GetGatewayById(std::string gatewayId)
 
 IPCAStatus OCFClient::DeleteDevice(std::string deviceId)
 {
+    // set device unowned first.
+    SetDeviceOwnedStatus(deviceId, UNBINDED);
+
     OCFDevice::Ptr device = GetDeviceById(deviceId);
     if (device->m_observeHandle != nullptr)
         IPCACloseHandle(device->m_observeHandle, nullptr, 0);
     g_OCFDeviceList.erase(deviceId);
 
     return IPCA_OK;
+}
+
+IPCAStatus OCFClient::GetDeviceOwnedStatus(
+        std::string deviceId,
+        OCFDeviceOwnedStatus& ownedStatus)
+{
+    OCFDevice::Ptr device = GetDeviceById(deviceId);
+    if (device != nullptr) {
+        ownedStatus = device->m_ownedStatus;
+        DM_LOGD("deviceId: %s, ownedStatus: %d\n", deviceId.c_str(), ownedStatus);
+        return IPCA_OK;
+    }
+    return IPCA_FAIL;
+}
+
+IPCAStatus OCFClient::SetDeviceOwnedStatus(
+        std::string deviceId,
+        OCFDeviceOwnedStatus ownedStatus)
+{
+    OCFDevice::Ptr device = GetDeviceById(deviceId);
+    if (device != nullptr) {
+        // update owned device list & database
+        OCFDeviceTableInfo info;
+        info.nDeviceId = device->m_deviceId;
+        info.nDeviceType = device->m_deviceType;
+        info.nDeviceName = device->m_deviceName;
+        info.nManufacture = device->m_manufacture;
+        if (ownedStatus == LOCAL_BINDED) {
+            g_ownedDeviceList.push_back(info);
+            mainDB().updateOrInsert(info);
+        } else if (ownedStatus == UNBINDED) {
+            std::vector<OCFDeviceTableInfo>::iterator it;
+            for (it = g_ownedDeviceList.begin(); it != g_ownedDeviceList.end(); it++) {
+                if (it->nDeviceId == device->m_deviceId) {
+                    g_ownedDeviceList.erase(it);
+                    break;
+                }
+            }
+            mainDB().deleteBy(info);
+        }
+        device->m_ownedStatus = ownedStatus;
+        DM_LOGD("deviceId: %s, ownedStatus: %d\n", deviceId.c_str(), ownedStatus);
+        return IPCA_OK;
+    }
+    return IPCA_FAIL;
 }
 
 void OCFClient::SetCallback(OCFDeviceCallBackHandler* callback)

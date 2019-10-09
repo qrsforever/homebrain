@@ -10,8 +10,8 @@
 #include "RuleEventHandler.h"
 #include "StringData.h"
 
-int gRuleEngineModuleLevel = LOG_LEVEL_WARNING;
-int gRuleScriptModuleLevel = LOG_LEVEL_WARNING;
+int gRuleEngineModuleLevel = LOG_LEVEL_DEBUG;
+int gRuleScriptModuleLevel = LOG_LEVEL_DEBUG;
 
 using namespace UTILS;
 

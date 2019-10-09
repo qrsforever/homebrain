@@ -1,0 +1,58 @@
+##
+# kk_ga build script
+##
+
+import os
+Import('env')
+
+build_dir = env.get('BUILD_DIR')
+top_dir = env.get('SRC_DIR')
+
+Depends(SConscript(build_dir + 'homebrain/src/utils/SConscript'), ['testtest', 'libcurl_export'])
+Depends(SConscript(build_dir + 'homebrain/src/gateway-agent/SConscript'), ['MQTTPacketClient'])
+
+kk_ga_env = env.Clone()
+
+target_os = kk_ga_env.get('TARGET_OS')
+
+enable_unittest = False
+
+if os.path.exists(os.path.join(top_dir, 'build_info.h')):
+    kk_ga_env.AppendUnique(CPPDEFINES = ['HAVE_BUILD_INFO'])
+
+kk_ga_env.AppendUnique(CPPPATH = [
+    top_dir,
+    os.path.join(build_dir, 'include'),
+    '.',
+    '#/extlibs/rapidjson/rapidjson/include',
+    '#homebrain/src',
+    '#homebrain/src/utils/Log/src',
+    '#homebrain/src/utils/Message/src',
+    '#homebrain/src/utils/Misc/src',
+    '#homebrain/src/utils/SQLite/src',
+    '#homebrain/src/gateway-agent/src',
+])
+
+kk_ga_env.PrependUnique(LIBS=[
+    'gateway_agent',
+    'MQTTPacketClient',
+    'utils_log', 'utils_message', 'utils_misc', 'utils_sqlite',
+    'curl', 'sqlite3',
+    'mbedx509', 'mbedtls', 'mbedcrypto',
+    'rt',
+])
+
+kk_ga_env.AppendUnique(LINKFLAGS = [
+])
+
+kk_ga_env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME']=1
+
+kk_ga_src = [
+    'KKMain.cpp',
+    'KKHelper.cpp',
+    'MainHandler.cpp',
+    'KKDatabase.cpp',
+    'DBTables.cpp',
+]
+
+kkga = kk_ga_env.Program('kk_ga', kk_ga_src)

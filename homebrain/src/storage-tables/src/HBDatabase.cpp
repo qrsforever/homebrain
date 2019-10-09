@@ -7,14 +7,16 @@
  ****************************************************************************/
 
 #include "HBDatabase.h"
+#include "SQLiteLog.h"
 #include "HBGlobalTable.h"
-#include "Log.h"
 #include "MessageTypes.h"
 #include "MainPublicHandler.h"
 
 #include "RuleEngineTable.h"
+#include "SceneEngineTable.h"
 #include "DeviceProfileTable.h"
 #include "GatewayConnectTable.h"
+#include "OCFDeviceTable.h"
 
 using namespace UTILS;
 
@@ -22,9 +24,8 @@ namespace HB {
 
 static HBDatabase *gDB = 0;
 
-HBDatabase::HBDatabase()
+HBDatabase::HBDatabase() : mDBPath("engine.db"), mAutoCloseInterval(15000), mDB(0)
 {
-
 }
 
 HBDatabase::~HBDatabase()
@@ -50,7 +51,7 @@ bool HBDatabase::open()
     if (isOpen())
         return true;
 
-    LOGD("database[%s]\n", mDBPath.c_str());
+    SQL_LOGD("database[%s]\n", mDBPath.c_str());
 
     mDB = new SQLiteDatabase();
     if (!mDB->open(mDBPath.c_str()))
@@ -60,7 +61,7 @@ bool HBDatabase::open()
 
 bool HBDatabase::close()
 {
-    LOGD("database[%s]\n", mDBPath.c_str());
+    SQL_LOGD("database[%s]\n", mDBPath.c_str());
 
     if (mDB)
         delete mDB;
@@ -73,7 +74,7 @@ bool HBDatabase::close()
 template<>
 bool HBDatabase::updateOrInsert<LogTableInfo>(const LogTableInfo &info)
 {
-    LOGD("update log table\n");
+    SQL_LOGI("update log table\n");
 
     if (!open())
         return false;
@@ -86,7 +87,7 @@ bool HBDatabase::updateOrInsert<LogTableInfo>(const LogTableInfo &info)
 template<>
 bool HBDatabase::deleteBy<LogTableInfo>(const LogTableInfo &info)
 {
-    LOGD("update log table\n");
+    SQL_LOGI("delete log table\n");
 
     if (!open())
         return false;
@@ -99,7 +100,7 @@ bool HBDatabase::deleteBy<LogTableInfo>(const LogTableInfo &info)
 template <>
 bool HBDatabase::queryBy<LogTableInfo>(std::vector<LogTableInfo> &infos, const LogTableInfo &info)
 {
-    LOGD("query log table\n");
+    SQL_LOGI("query log table\n");
 
     if (!open())
         return false;
@@ -111,11 +112,66 @@ bool HBDatabase::queryBy<LogTableInfo>(std::vector<LogTableInfo> &infos, const L
 
 /*}}}*/
 
+/*{{{ SmartHome Table */
+template<>
+bool HBDatabase::updateOrInsert<SmartHomeInfo>(const SmartHomeInfo &info)
+{
+    SQL_LOGI("update smarthome table\n");
+
+    if (!open())
+        return false;
+
+    SmartHomeTable tab(*mDB);
+
+    return tab.updateOrInsert(info);
+}
+
+template<>
+bool HBDatabase::deleteBy<SmartHomeInfo>(const SmartHomeInfo &info)
+{
+    SQL_LOGI("delete smarthome table\n");
+
+    if (!open())
+        return false;
+
+    SmartHomeTable tab(*mDB);
+
+    return tab.deleteBy(info, "");
+}
+
+template <>
+bool HBDatabase::queryBy<SmartHomeInfo>(std::vector<SmartHomeInfo> &infos, const SmartHomeInfo &info)
+{
+    SQL_LOGI("query smarthome table\n");
+
+    if (!open())
+        return false;
+
+    SmartHomeTable tab(*mDB);
+
+    return tab.queryBy(infos, info, "");
+}
+
+template <>
+bool HBDatabase::queryBy<SmartHomeInfo>(std::vector<SmartHomeInfo> &infos, const std::string &key)
+{
+    SQL_LOGD("query smarthome table\n");
+
+    if (!open())
+        return false;
+
+    SmartHomeTable tab(*mDB);
+
+    return tab.queryBy(infos, SmartHomeInfo(key), "");
+}
+
+/*}}}*/
+
 /*{{{ Device Profile Table */
 template<>
 bool HBDatabase::updateOrInsert<DeviceTableInfo>(const DeviceTableInfo &info)
 {
-    LOGD("update device table\n");
+    SQL_LOGD("update device table\n");
 
     if (!open())
         return false;
@@ -128,7 +184,7 @@ bool HBDatabase::updateOrInsert<DeviceTableInfo>(const DeviceTableInfo &info)
 template<>
 bool HBDatabase::deleteBy<DeviceTableInfo>(const DeviceTableInfo &info)
 {
-    LOGD("delete device table\n");
+    SQL_LOGD("delete device table\n");
 
     if (!open())
         return false;
@@ -141,7 +197,7 @@ bool HBDatabase::deleteBy<DeviceTableInfo>(const DeviceTableInfo &info)
 template <>
 bool HBDatabase::queryBy<DeviceTableInfo>(std::vector<DeviceTableInfo> &infos, const DeviceTableInfo &info)
 {
-    LOGD("query device table\n");
+    SQL_LOGD("query device table\n");
 
     if (!open())
         return false;
@@ -157,7 +213,7 @@ bool HBDatabase::queryBy<DeviceTableInfo>(std::vector<DeviceTableInfo> &infos, c
 template<>
 bool HBDatabase::updateOrInsert<RuleTableInfo>(const RuleTableInfo &info)
 {
-    LOGD("update rule table\n");
+    SQL_LOGD("update rule table\n");
 
     if (!open())
         return false;
@@ -170,7 +226,7 @@ bool HBDatabase::updateOrInsert<RuleTableInfo>(const RuleTableInfo &info)
 template<>
 bool HBDatabase::deleteBy<RuleTableInfo>(const RuleTableInfo &info)
 {
-    LOGD("delete rule table\n");
+    SQL_LOGD("delete rule table\n");
 
     if (!open())
         return false;
@@ -183,7 +239,7 @@ bool HBDatabase::deleteBy<RuleTableInfo>(const RuleTableInfo &info)
 template <>
 bool HBDatabase::queryBy<RuleTableInfo>(std::vector<RuleTableInfo> &infos, const RuleTableInfo &filter)
 {
-    LOGD("query rule table\n");
+    SQL_LOGD("query rule table\n");
 
     if (!open())
         return false;
@@ -196,7 +252,7 @@ bool HBDatabase::queryBy<RuleTableInfo>(std::vector<RuleTableInfo> &infos, const
 template <>
 bool HBDatabase::queryBy<RuleTableInfo>(std::vector<RuleTableInfo> &infos, const std::string &key)
 {
-    LOGD("query rule table\n");
+    SQL_LOGD("query rule table\n");
 
     if (!open())
         return false;
@@ -208,11 +264,66 @@ bool HBDatabase::queryBy<RuleTableInfo>(std::vector<RuleTableInfo> &infos, const
 
 /*}}}*/
 
+/*{{{ Scene Table */
+template<>
+bool HBDatabase::updateOrInsert<SceneTableInfo>(const SceneTableInfo &info)
+{
+    SQL_LOGD("update scene table\n");
+
+    if (!open())
+        return false;
+
+    SceneEngineTable tab(*mDB);
+
+    return tab.updateOrInsert(info);
+}
+
+template<>
+bool HBDatabase::deleteBy<SceneTableInfo>(const SceneTableInfo &info)
+{
+    SQL_LOGD("delete scene table\n");
+
+    if (!open())
+        return false;
+
+    SceneEngineTable tab(*mDB);
+
+    return tab.deleteBy(info, "");
+}
+
+template <>
+bool HBDatabase::queryBy<SceneTableInfo>(std::vector<SceneTableInfo> &infos, const SceneTableInfo &filter)
+{
+    SQL_LOGD("query scene table\n");
+
+    if (!open())
+        return false;
+
+    SceneEngineTable tab(*mDB);
+
+    return tab.queryBy(infos, filter, "");
+}
+
+template <>
+bool HBDatabase::queryBy<SceneTableInfo>(std::vector<SceneTableInfo> &infos, const std::string &key)
+{
+    SQL_LOGD("query rule table\n");
+
+    if (!open())
+        return false;
+
+    SceneEngineTable tab(*mDB);
+
+    return tab.queryBy(infos, SceneTableInfo(key), "");
+}
+
+/*}}}*/
+
 /*{{{ Gateway Table */
 template<>
 bool HBDatabase::updateOrInsert<GatewayTableInfo>(const GatewayTableInfo &info)
 {
-    LOGD("update gateway table\n");
+    SQL_LOGD("update gateway table\n");
 
     if (!open())
         return false;
@@ -225,7 +336,7 @@ bool HBDatabase::updateOrInsert<GatewayTableInfo>(const GatewayTableInfo &info)
 template<>
 bool HBDatabase::deleteBy<GatewayTableInfo>(const GatewayTableInfo &info)
 {
-    LOGD("delete gateway table\n");
+    SQL_LOGD("delete gateway table\n");
 
     if (!open())
         return false;
@@ -238,7 +349,7 @@ bool HBDatabase::deleteBy<GatewayTableInfo>(const GatewayTableInfo &info)
 template <>
 bool HBDatabase::queryBy<GatewayTableInfo>(std::vector<GatewayTableInfo> &infos, const GatewayTableInfo &filter)
 {
-    LOGD("query gateway table\n");
+    SQL_LOGD("query gateway table\n");
 
     if (!open())
         return false;
@@ -251,7 +362,7 @@ bool HBDatabase::queryBy<GatewayTableInfo>(std::vector<GatewayTableInfo> &infos,
 template <>
 bool HBDatabase::queryBy<GatewayTableInfo>(std::vector<GatewayTableInfo> &infos, const std::string &key)
 {
-    LOGD("query gateway table\n");
+    SQL_LOGD("query gateway table\n");
 
     if (!open())
         return false;
@@ -259,6 +370,61 @@ bool HBDatabase::queryBy<GatewayTableInfo>(std::vector<GatewayTableInfo> &infos,
     GatewayConnectTable tab(*mDB);
 
     return tab.queryBy(infos, GatewayTableInfo(key), "");
+}
+
+/*}}}*/
+
+/*{{{ Device list Table */
+template<>
+bool HBDatabase::updateOrInsert<OCFDeviceTableInfo>(const OCFDeviceTableInfo &info)
+{
+    SQL_LOGD("update device list table\n");
+
+    if (!open())
+        return false;
+
+    OCFDeviceTable tab(*mDB);
+
+    return tab.updateOrInsert(info);
+}
+
+template<>
+bool HBDatabase::deleteBy<OCFDeviceTableInfo>(const OCFDeviceTableInfo &info)
+{
+    SQL_LOGD("delete item from device list table\n");
+
+    if (!open())
+        return false;
+
+    OCFDeviceTable tab(*mDB);
+
+    return tab.deleteBy(info, "");
+}
+
+template <>
+bool HBDatabase::queryBy<OCFDeviceTableInfo>(std::vector<OCFDeviceTableInfo> &infos, const OCFDeviceTableInfo &filter)
+{
+    SQL_LOGD("query item from device list table\n");
+
+    if (!open())
+        return false;
+
+    OCFDeviceTable tab(*mDB);
+
+    return tab.queryBy(infos, filter, "");
+}
+
+template <>
+bool HBDatabase::queryBy<OCFDeviceTableInfo>(std::vector<OCFDeviceTableInfo> &infos, const std::string &key)
+{
+    SQL_LOGD("query item from device list table\n");
+
+    if (!open())
+        return false;
+
+    OCFDeviceTable tab(*mDB);
+
+    return tab.queryBy(infos, OCFDeviceTableInfo(key), "");
 }
 
 /*}}}*/

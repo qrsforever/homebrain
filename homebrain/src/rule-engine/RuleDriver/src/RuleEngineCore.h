@@ -50,7 +50,7 @@ public:
     void finalize();
     long assertRun(std::string assert);
 
-    void reset() { mEnv->reset(); }
+    void reset();
     bool handleTimer();
     void handleError(const char *err);
 

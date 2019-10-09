@@ -33,6 +33,7 @@ class WindowGUI(object):
         self.lan = 'cn'
         self.tcp = TCPClient(4096)
         self.log = dict()
+        self.conn_flag = 1
 
         # window
         self.width = width
@@ -58,6 +59,12 @@ class WindowGUI(object):
         self.host_addr.set(cf.get('HB', 'LogUDPAddress'))
         self.host_port.set(cf.get('HB', 'LogUDPPort'))
 
+        # ftp setting
+        self.ftp_addr   = tk.StringVar()
+        self.ftp_user   = tk.StringVar()
+        self.ftp_passwd = tk.StringVar()
+        self.log_filesize = tk.StringVar()
+
         self.filter_key = tk.StringVar()
         self.grep_key = tk.StringVar()
         self.rule_newn_var = tk.StringVar()
@@ -70,7 +77,10 @@ class WindowGUI(object):
 # }}}
 
     def onGlobalConfigure(self):# {{{
-        self.win.title(gStrings['title'][self.lan])
+        if self.conn_flag == 1:
+            self.win.title(gStrings['title'][self.lan])
+        else:
+            self.win.title(gStrings['title2'][self.lan])
         style = ttk.Style()
         style.theme_create('monitor', parent="alt", settings=gStyles['monitor'])
         style.theme_use('monitor')
@@ -122,12 +132,13 @@ class WindowGUI(object):
         self.tabControl.add(self.scene_tab, text = gStrings['sceneAuto'][self.lan])
         self.tabControl.pack(expand=1, fill=tk.BOTH)
 
-        self.createBasicInfoView(self.bi_tab)
         self.createLogSetView(self.log_tab)
         self.createLogSetView2(self.log_tab2)
-        self.createRuleControlView(self.dev_tab)
-        self.createRuleControlView2(self.dev_tab2)
-        self.createSceneAutoView(self.scene_tab)
+        if self.conn_flag == 1:
+            self.createBasicInfoView(self.bi_tab)
+            self.createRuleControlView(self.dev_tab)
+            self.createRuleControlView2(self.dev_tab2)
+            self.createSceneAutoView(self.scene_tab)
 # }}}
 
     def onSwitchLang(self):# {{{
@@ -161,9 +172,10 @@ class WindowGUI(object):
             self.win.destroy()
 # }}}
 
-    def onConnect(self):# {{{
+    def onConnect(self, flag):# {{{
         addr = self.server_addr.get()
         port = self.server_port.get()
+        self.conn_flag = flag;
         if self.tcp.connect(addr, int(port)):
             self.conn_frm.destroy()
             self.onInitWindow()
@@ -201,8 +213,12 @@ class WindowGUI(object):
                 ).grid(row=2, column=1, sticky=tk.W, padx=10, pady=10)
         ttk.Button(self.conn_frm,
                 text = gStrings['connect'][self.lan],
-                command = self.onConnect,
-                ).grid(row=3, column=1, columnspan=2, sticky=tk.E, padx=12)
+                command = lambda : self.onConnect(1)
+                ).grid(row=3, column=1)
+        ttk.Button(self.conn_frm,
+                text = gStrings['connect2'][self.lan],
+                command = lambda : self.onConnect(2)
+                ).grid(row=3, column=1, sticky=tk.E)
         self.conn_frm.pack(side=tk.BOTTOM, anchor=tk.CENTER)
 # }}}
 
@@ -296,6 +312,9 @@ class WindowGUI(object):
                         ).grid(row=i, column=j+1)
             i = i + 1
 
+        if self.conn_flag != 1:
+            return
+
         # CLP Watch
         watch_frm = ttk.Frame(tab)
         watch_frm.pack(anchor=tk.W)
@@ -353,6 +372,28 @@ class WindowGUI(object):
 
         log_frm.pack(anchor="w")
 
+        params = self.tcp.command('getFtpLogParams').split(TOCKEN)
+        if len(params) == 3:
+            self.ftp_addr.set(params[0])
+            self.ftp_user.set(params[1])
+            self.ftp_passwd.set(params[2])
+        self.log_filesize.set(self.tcp.command('getLogFileSize'))
+
+        # Log ftp
+        log_ftp = ttk.Frame(tab)
+        ttk.Label(log_ftp, text=gStrings['logFtpAddress'][self.lan]).grid(row=1, column=0)
+        ttk.Entry(log_ftp, width=37, textvariable=self.ftp_addr).grid(row=1, column=1)
+        ttk.Label(log_ftp, text=gStrings['logFtpUser'][self.lan]).grid(row=1, column=2, padx=5)
+        ttk.Entry(log_ftp, width=7, textvariable=self.ftp_user).grid(row=1, column=3, padx=5)
+        ttk.Label(log_ftp, text=gStrings['logFtpPassword'][self.lan]).grid(row=1, column=4, padx=3)
+        ttk.Entry(log_ftp, width=7, textvariable=self.ftp_passwd).grid(row=1, column=5, padx=3)
+        ttk.Label(log_ftp, text=gStrings['logFileSize'][self.lan]).grid(row=1, column=6, padx=3)
+        ttk.Entry(log_ftp, width=7, textvariable=self.log_filesize).grid(row=1, column=7, padx=3)
+        self.ftp_btn = ttk.Button(log_ftp, text = gStrings['set'][self.lan],
+                command = self.onFtpSet)
+        self.ftp_btn.grid(row=1, column=8, sticky=tk.W, padx=(10, 10))
+        log_ftp.pack(anchor="w")
+
         # Log Text
         self.log_text = tk.Text(tab, wrap=tk.NONE,
                 width=self.width, height=self.height
@@ -370,6 +411,7 @@ class WindowGUI(object):
         self.log_text.config(yscrollcommand=vscroll.set)
         self.log_text.config(xscrollcommand=hscroll.set)
         self.log_text.pack()
+
 # }}}
 
     def onLogWatchCheck(self, var, item):# {{{
@@ -393,6 +435,15 @@ class WindowGUI(object):
         self.logthread.start(addr, port, output);
         self.tcp.command('startUDPLog', addr, port);
         self.output_btn.configure(state=tk.DISABLED)
+# }}}
+
+    def onFtpSet(self):# {{{
+        addr = self.ftp_addr.get()
+        user = self.ftp_user.get()
+        pasw = self.ftp_passwd.get()
+        self.tcp.command('setFtpLog', addr, user, pasw);
+        size = self.log_filesize.get()
+        self.tcp.command('setLogFileSize', size);
 # }}}
 
     def onLogTerminate(self):# {{{

@@ -45,6 +45,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <stdint.h>
+#include <time.h>
 
 typedef struct Timer
 {
@@ -70,5 +72,7 @@ int linux_write(Network*, unsigned char*, int, int);
 DLLExport void NetworkInit(Network*);
 DLLExport int NetworkConnect(Network*, char*, int);
 DLLExport void NetworkDisconnect(Network*);
+
+uint32_t GetMSecs();
 
 #endif

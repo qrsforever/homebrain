@@ -48,7 +48,6 @@ Message *Message::obtain()
         m = new Message();
 
     pthread_mutex_unlock(&gMutex);
-
     return m;
 }
 
@@ -118,10 +117,13 @@ void Message::recycle()
 #ifdef USE_SHARED_PTR
     obj.reset();
 #else
-    obj->safeUnref();
+    if (obj)
+        obj->safeUnref();
     obj = NULL;
 #endif
     when = 0;
+    arg1 = 0;
+    arg2 = 0;
     target = NULL;
 
     if (!inHeap(this)) {

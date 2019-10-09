@@ -10,12 +10,11 @@
 #include "MicroHttpHandler.h"
 #include "MicroLogHandler.h"
 #include "DeviceProfileTable.h"
+#include "OCFDeviceTable.h"
 #include "HBHelper.h"
 #include "HBDatabase.h"
 
 #include "rapidjson/document.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
 
 #include <sstream>
 #include <map>
@@ -51,7 +50,8 @@ static std::map<int, const char*> gErrorCodes {/*{{{*/
     {-1602, "status inner2 error"},
 
     {-1700, "operate error"},
-    {-1701, "operate inner error"},
+
+    {-1800, "operate inner error"},
 };/*}}}*/
 
 class DeviceStatusResult {/*{{{*/
@@ -119,7 +119,11 @@ static void _list(const crow::request& req, crow::response& res)
         return ;
     }
     std::string result("\"result\":[");
+    bool online = false;
+    std::string onlineStr;
     std::string ownedStr;
+    std::string alias;
+    std::string room;
     HBDeviceOwnedStatus ownedStatus;
     std::vector<DeviceTableInfo> prfs;
     DeviceTableInfo filter;
@@ -127,24 +131,45 @@ static void _list(const crow::request& req, crow::response& res)
     for (auto it = deviceList.begin(); it != deviceList.end(); ++it) {
         if (it->second == "oic.d.bridge")
             continue;
+        filter.nDeviceType = it->second;
+        mainDB().queryBy(prfs, filter);
+        if (prfs.size() != 1)
+            continue;
         if (firstItem) firstItem = false; else result.append(",");
         ownedStatus = HB_DEVICE_UNBINDED;
         deviceManager().GetDeviceOwnedStatus(it->first, ownedStatus);
+        deviceManager().GetDeviceOnlineStatus(it->first, online);
+        onlineStr = (online) ? "true" : "false";
+        alias.assign("null");
+        room.assign("default");
         if (ownedStatus == HB_DEVICE_UNBINDED)
             ownedStr = "unbinded";
-        else if (ownedStatus == HB_DEVICE_LOCAL_BINDED)
-            ownedStr = "HB_binded";
-        else if (ownedStatus == HB_DEVICE_CLOUD_BINDED)
-            ownedStr = "cloud_binded";
-        filter.nDeviceType = it->second;
-        mainDB().queryBy(prfs, filter);
-        if (prfs.size() == 1) {
-            result.append("{\"deviceId\":\"").append(it->first).append("\"");
-            result.append(",\"typeId\":\"").append(it->second).append("\"");
-            result.append(",\"label\":\"").append(prfs[0].nDeviceName).append("\"");
-            result.append(",\"iconid\":\"").append(prfs[0].nIconId).append("\"");
-            result.append(",\"ownedStatus\":\"").append(ownedStr).append("\"}");
+        else {
+            if (ownedStatus == HB_DEVICE_LOCAL_BINDED)
+                ownedStr = "HB_binded";
+            else if (ownedStatus == HB_DEVICE_CLOUD_BINDED)
+                ownedStr = "cloud_binded";
+
+            // TODO test
+            std::vector<OCFDeviceTableInfo> ocfDevs;
+            OCFDeviceTableInfo dev(it->first);
+
+            mainDB().queryBy(ocfDevs, dev);
+            if (ocfDevs.size() == 1) {
+                alias = ocfDevs[0].nAlias;
+                room = ocfDevs[0].nRoom;
+            }
+            ocfDevs.clear();
         }
+
+        result.append("{\"deviceId\":\"").append(it->first).append("\"");
+        result.append(",\"typeId\":\"").append(it->second).append("\"");
+        result.append(",\"label\":\"").append(prfs[0].nDeviceName).append("\"");
+        result.append(",\"alias\":\"").append(alias).append("\"");
+        result.append(",\"room\":\"").append(room).append("\"");
+        result.append(",\"iconid\":\"").append(prfs[0].nIconId).append("\"");
+        result.append(",\"isonline\":\"").append(onlineStr).append("\"");
+        result.append(",\"ownedStatus\":\"").append(ownedStr).append("\"}");
         prfs.clear();
     }
     result.append("]");
@@ -318,6 +343,8 @@ static void _profile(const crow::request& req, crow::response& res)
         result.append(prfs[0].nJsonData);
         result.append(",\"description\":\"null\"");
         result.append(",\"label\":\"").append(prfs[0].nDeviceName).append("\"");
+        result.append(",\"devicetype\":\"").append(prfs[0].nDeviceType).append("\"");
+        result.append(",\"supertype\":\"").append(prfs[0].nSuperType).append("\"");
         result.append(",\"iconid\":\"").append(prfs[0].nIconId).append("\"");
         result.append(",\"manufacture\":\"").append(prfs[0].nDeviceManu).append("\"");
         result.append(",\"version\":\"").append(prfs[0].nDeviceVer).append("\"");
@@ -376,6 +403,8 @@ static void _operate(const crow::request& req, crow::response& res)
         status.setStatusCode(-1002);
         return;
     }
+    HH_LOGD("device operate:%", req.body.c_str());
+
     Value& deviceId = doc["deviceId"];
     if (!deviceId.IsString()) {
         status.setStatusCode(-1002);
@@ -424,6 +453,45 @@ static void _operate(const crow::request& req, crow::response& res)
     return ;
 }/*}}}*/
 
+static void _rename(const crow::request& req, crow::response& res)
+{/*{{{*/
+    DeviceStatusResult status(req, res);
+
+    Document doc;
+    doc.Parse(req.body.c_str());
+
+    if (doc.HasParseError()) {
+        status.setStatusCode(-1002);
+        return;
+    }
+    HH_LOGD("device rename:%", req.body.c_str());
+
+    Value& deviceId = doc["deviceId"];
+    if (!deviceId.IsString()) {
+        status.setStatusCode(-1002);
+        return;
+    }
+
+    Value& newName = doc["newName"];
+    if (!newName.IsString()) {
+        status.setStatusCode(-1002);
+        return;
+    }
+
+    std::vector<OCFDeviceTableInfo> ocfDevs;
+    OCFDeviceTableInfo dev(deviceId.GetString());
+
+    mainDB().queryBy(ocfDevs, dev);
+    if (ocfDevs.size() != 1) {
+        status.setStatusCode(-1800);
+        return;
+    }
+    ocfDevs[0].nAlias.assign(newName.GetString());
+    mainDB().updateOrInsert(ocfDevs[0]);
+    status.setStatusCode(0, "\"result\": {\"ret\": \"SUCCESS\"}");
+    return;
+}/*}}}*/
+
 extern void initDevicesAPI(APP& app)
 {
     CROW_ROUTE(app, "/api/familydevice/discovery").methods(REST_POST)(_discovery);
@@ -435,6 +503,7 @@ extern void initDevicesAPI(APP& app)
     CROW_ROUTE(app, "/api/familydevice/profile").methods(REST_POST)(_profile);
     CROW_ROUTE(app, "/api/familydevice/status").methods(REST_POST)(_status);
     CROW_ROUTE(app, "/api/familydevice/operate").methods(REST_POST)(_operate);
+    CROW_ROUTE(app, "/api/familydevice/rename").methods(REST_POST)(_rename);
 }
 
 } /* namespace HB */

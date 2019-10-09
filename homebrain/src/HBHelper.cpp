@@ -74,6 +74,7 @@ void parseDeviceProfileJson(const char *filepath)
 
     rapidjson::Document doc;
     std::string iconId("ic_default_device");
+    std::string superType("DEVICE");
 
     doc.Parse<0>(jsonDoc.str().c_str());
     if (doc.HasParseError()) {
@@ -96,7 +97,12 @@ void parseDeviceProfileJson(const char *filepath)
 
     if (doc.HasMember("iconid")) {
         rapidjson::Value &iconid = doc["iconid"];
-        iconId = iconid.GetString();
+        iconId.assign(iconid.GetString());
+    }
+
+    if (doc.HasMember("supertype")) {
+        rapidjson::Value &super = doc["supertype"];
+        superType.assign(super.GetString());
     }
 
     rapidjson::Value &profile = doc["profile"];
@@ -117,7 +123,7 @@ void parseDeviceProfileJson(const char *filepath)
     }
     info.nDeviceVer = version.GetString();
 
-    std::shared_ptr<ClassPayload> payload = std::make_shared<ClassPayload>(info.nDeviceType, "DEVICE", info.nDeviceVer);
+    std::shared_ptr<ClassPayload> payload = std::make_shared<ClassPayload>(info.nDeviceType, superType, info.nDeviceVer);
     if (!ElinkCloudDataChannel::parseProfile(profile, payload)) {
         LOGE("rapidjson parse[%s] profile error!\n", filepath);
         return;
@@ -130,6 +136,7 @@ void parseDeviceProfileJson(const char *filepath)
     info.nDeviceName = devicename.GetString();
     info.nDeviceManu = manufacture.GetString();
     info.nIconId = iconId;
+    info.nSuperType = superType;
     info.nScriptData = payload->toString();
     info.nJsonData = buffer.GetString();
 

@@ -1,5 +1,6 @@
 {
     "devicetype": "oic.d.hue_bri_light",
+    "supertype": "oic.d.light",
     "devicename": "飞利浦灯",
     "manufacture": "Philips",
     "iconid": "ic_default_light",

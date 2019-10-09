@@ -24,7 +24,7 @@ SQLiteDatabase::SQLiteDatabase()
 SQLiteDatabase::~SQLiteDatabase()
 {
     if (close())
-        LOGI("Close DB [%s] success.\n", mSQLiteDBPath.c_str());
+        SQL_LOGI("Close DB [%s] success.\n", mSQLiteDBPath.c_str());
 }
 
 bool SQLiteDatabase::open(std::string filepath)
@@ -35,11 +35,11 @@ bool SQLiteDatabase::open(std::string filepath)
     close();
     mSQLiteDBPath = filepath;
     if (sqlite3_open(mSQLiteDBPath.c_str(), &mSQLiteDB) != SQLITE_OK) {
-        LOGW("Open DB [%s] fail!\n", filepath.c_str());
+        SQL_LOGW("Open DB [%s] fail!\n", filepath.c_str());
         return false;
     }
 
-	LOGI("Open DB [%s] success.\n", filepath.c_str());
+    SQL_LOGI("Open DB [%s] success.\n", filepath.c_str());
     return true;
 }
 
@@ -102,7 +102,7 @@ bool SQLiteDatabase::close()
         needRetry = false;
         rc = sqlite3_close(mSQLiteDB);
         if (SQLITE_BUSY == rc || SQLITE_LOCKED == rc) {
-            LOGE("sqlite3_close : SQLITE_BUSY or SQLITE_LOCKED.\n");
+            SQL_LOGE("sqlite3_close : SQLITE_BUSY or SQLITE_LOCKED.\n");
             needRetry = true;
             usleep(20);
             if (!triedFinalizingOpenStatements) {
@@ -214,7 +214,7 @@ sqlite3_stmt* SQLiteDatabase::stmtPrepare(const char *sql)
     }
 
     if (rc != SQLITE_OK) {
-        LOGE("Please Check the SQL Statement[%s]! errorcode[%d] errmsg[%s]\n", sql, rc, sqlite3_errmsg(mSQLiteDB));
+        SQL_LOGE("Please Check the SQL Statement[%s]! errorcode[%d] errmsg[%s]\n", sql, rc, sqlite3_errmsg(mSQLiteDB));
         sqlite3_finalize(pStmt);
         return NULL;
     }
@@ -263,12 +263,14 @@ bool SQLiteDatabase::exec(const char *sql, const SQLiteValue &v0, const SQLiteVa
 
 bool SQLiteDatabase::exec(const char *sql, const SQLiteValue *values, int length)
 {
+    Mutex::Autolock _l(&mMutex);
     SQLiteResultSet resultSet;
     SQLiteResultSet *pResultSet = findClosedCache(sql);
     if (!pResultSet) {
         resultSet.mStmt = stmtPrepare(sql);
         pResultSet = &resultSet;
     }
+
     pResultSet->open(this);
     if (!(pResultSet->mStmt))
         return false;
@@ -297,6 +299,7 @@ SQLiteResultSet* SQLiteDatabase::query(const char *sql, const SQLiteValue &v0, c
 
 SQLiteResultSet* SQLiteDatabase::query(const char *sql, const SQLiteValue *values, int length)
 {
+    Mutex::Autolock _l(&mMutex);
     SQLiteResultSet *pResultSet = findClosedCache(sql);
     if (pResultSet)
         mOpenReusltSets.push_back(pResultSet);
@@ -360,8 +363,8 @@ bool SQLiteDatabase::tableExists(std::string name)
     int count = 0;
     SQLiteResultSet *rs = query("SELECT count(*) FROM sqlite_master WHERE type='table' and name=?", SQLText(name.c_str()));
     if (rs) {
-		if (rs->next())
-        	count = rs->columnInt(0);
+        if (rs->next())
+            count = rs->columnInt(0);
         rs->close();
     }
 

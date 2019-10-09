@@ -23,6 +23,7 @@ typedef enum {
     CT_INSTANCE,
     CT_FACT,
     CT_TEMPLATE,
+    CT_SCENE,
 } ConditionType;
 
 typedef enum {

@@ -16,13 +16,15 @@ db_src = [
     'src/HBDatabase.cpp',
     'src/HBGlobalTable.cpp',
     'src/RuleEngineTable.cpp',
+    'src/SceneEngineTable.cpp',
     'src/DeviceProfileTable.cpp',
     'src/GatewayConnectTable.cpp',
+    'src/OCFDeviceTable.cpp',
     ]
 
 db_env.PrependUnique(LIBS=[
     'sqlite3',
 ])
 
-static_libdatabase = db_env.StaticLibrary('HB_StorageTable', db_src)
-db_env.InstallTarget(static_libdatabase, 'HB_StorageTable')
+shared_libdatabase = db_env.SharedLibrary('HB_StorageTable', db_src)
+db_env.InstallTarget(shared_libdatabase, 'HB_StorageTable')

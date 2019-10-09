@@ -6,4 +6,5 @@ import os
 
 platform = os.environ.get("PROJECT_PLATFORM")
 
-SConscript(os.path.join('platforms', platform, 'SConscript'))
+if platform:
+    SConscript(os.path.join('platforms', platform, 'SConscript'))

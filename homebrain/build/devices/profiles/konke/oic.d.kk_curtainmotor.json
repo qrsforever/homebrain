@@ -1,0 +1,30 @@
+{
+    "devicetype": "oic.d.kk_curtainmotor",
+    "supertype": "oic.d.curtainmotor",
+    "devicename": "控客窗帘电机",
+    "manufacture": "Konke",
+    "version": "0.9.2",
+    "profile": {
+        "OnlineState": {
+            "tag": "在线状态",
+            "write": "F",
+            "type": "enum",
+            "read": "T",
+            "range": {
+                "0": "离线",
+                "1": "在线"
+            }
+        },
+        "status": {
+            "tag": "状态",
+            "read": "T",
+            "write": "T",
+            "type": "enum",
+            "range": {
+                "0": "顺时针",
+                "1": "逆时针",
+                "2": "停止"
+            }
+        }
+    }
+}

@@ -28,8 +28,6 @@
 using namespace UTILS;
 using namespace rapidjson;
 
-#define SCRIPT_SYNC
-
 namespace HB {
 
 enum RuleErrorCode {
@@ -45,7 +43,8 @@ static std::map<std::string, const char*> gUriDecr {
     {"/api/familyscene/modify",  "规则修改"},
     {"/api/familyscene/query",   "规则查询"},
     {"/api/familyscene/listall", "规则列表查询"},
-    {"/api/familyscene/execute", "规则执行"}
+    {"/api/familyscene/execute", "规则执行"},
+    {"/api/familyscene/enable",  "规则使能"}
 };
 
 class RuleStatusResult {/*{{{*/
@@ -247,10 +246,41 @@ static void _modify(const crow::request& req, crow::response& res)
     info.nJsonData = req.body;
     info.nScriptData = std::move(payload->toString());
 
+    HH_LOGD("[%s]'s friends:%s\n", info.nRuleId.c_str(), info.nFriends.c_str());
+
     if (!payload->mManual) {
         // only auto rule can have manual action
-        info.nFriends.assign("");
+        // delete when ui uncheck, check the diff before change and after change
+        std::vector<std::string> oldfriends = stringSplit(info.nFriends, "|");
         std::vector<std::string> &friends = payload->mRHS->mSceneIds;
+        for (size_t i = 0; i < oldfriends.size(); ++i) {
+            bool find = false;
+            for (size_t j = 0; j < friends.size(); ++j) {
+                if (oldfriends[i] == friends[i]) {
+                    find = true;
+                    break;
+                }
+            }
+            if (!find) {
+                std::vector<RuleTableInfo> tmpinfos;
+                mainDB().queryBy(tmpinfos, oldfriends[i]);
+                if (tmpinfos.size() == 1 && !tmpinfos[0].nFriends.empty()) {
+                    std::vector<std::string> tmpfriends = stringSplit(tmpinfos[0].nFriends, "|");
+                    tmpinfos[0].nFriends.assign("");
+                    for (size_t j = 0, s = tmpfriends.size(); j < s; ++j) {
+                        // filter out the uncheck rules
+                        if (tmpfriends[j] == info.nRuleId)
+                            continue;
+                        if (!tmpinfos[0].nFriends.empty())
+                            tmpinfos[0].nFriends.append("|");
+                        tmpinfos[0].nFriends.append(tmpfriends[j]);
+                    }
+                    mainDB().updateOrInsert(tmpinfos[0]);
+                }
+            }
+        }
+
+        info.nFriends.assign("");
         for (size_t i = 0; i < friends.size(); ++i) {
             std::vector<RuleTableInfo> tmpinfos;
             mainDB().queryBy(tmpinfos, friends[i]);
@@ -267,6 +297,7 @@ static void _modify(const crow::request& req, crow::response& res)
                 info.nFriends.append(friends[i]);
             }
         }
+        HH_LOGD("[%s]'s friends:%s\n", info.nRuleId.c_str(), info.nFriends.c_str());
     }
     mainDB().updateOrInsert(info);
 
@@ -392,20 +423,20 @@ static void _listall(const crow::request& req, crow::response& res)
     if (!status.checkToken())
         return;
 
-    std::vector<RuleTableInfo> infos;
-    mainDB().queryBy(infos, RuleTableInfo());
+    std::vector<RuleTableInfo> rules;
+    mainDB().queryBy(rules, RuleTableInfo());
 
     std::string extstr;
     extstr.append("\"data\":[");
-    for (unsigned int i = 0; i < infos.size(); ++i) {
+    for (unsigned int i = 0, l = rules.size(); i < l; ++i) {
         if (i) extstr.append(",");
         /* TODO */
-        extstr.append("{\"triggerEnabled\":\"").append(int2String(infos[i].nEnable)).append("\"");
-        extstr.append(",\"manualEnabled\":\"").append(int2String(infos[i].nManual)).append("\"");
-        extstr.append(",\"sceneName\":\"").append(infos[i].nRuleName).append("\"");
-        extstr.append(",\"sceneId\":\"").append(infos[i].nRuleId).append("\"");
-        extstr.append(",\"friends\":\"").append(infos[i].nFriends).append("\"");
-        extstr.append(",\"description\":\"").append(infos[i].nRuleDesr).append("\"}");
+        extstr.append("{\"triggerEnabled\":\"").append(int2String(rules[i].nEnable)).append("\"");
+        extstr.append(",\"manualEnabled\":\"").append(int2String(rules[i].nManual)).append("\"");
+        extstr.append(",\"sceneName\":\"").append(rules[i].nRuleName).append("\"");
+        extstr.append(",\"sceneId\":\"").append(rules[i].nRuleId).append("\"");
+        extstr.append(",\"friends\":\"").append(rules[i].nFriends).append("\"");
+        extstr.append(",\"description\":\"").append(rules[i].nRuleDesr).append("\"}");
     }
     extstr.append("]");
     status.setStatusCode(RC_SUCCESS, extstr);
@@ -441,6 +472,67 @@ static void _execute(const crow::request& req, crow::response& res)
     return;
 }/*}}}*/
 
+static void _enable(const crow::request& req, crow::response& res)
+{/*{{{*/
+    HH_LOGD("api:%s\n", req.url.c_str());
+
+    RuleStatusResult status(req, res);
+
+    Document doc;
+    doc.Parse(req.body.c_str());
+
+    if (doc.HasParseError()) {
+        status.setStatusCode(RC_FAIL, "\"details\": \"doc parse error!\"");
+        return;
+    }
+
+    Value& ruleId = doc["sceneId"];
+    if (!ruleId.IsString()) {
+        status.setStatusCode(RC_FAIL, "\"details\": \"doc parse ruleid error!\"");
+        return;
+    }
+
+    Value& enable = doc["enable"];
+    if (!enable.IsString()) {
+        status.setStatusCode(RC_FAIL, "\"details\": \"doc parse ruleid error!\"");
+        return;
+    }
+
+    std::vector<RuleTableInfo> infos;
+    mainDB().queryBy(infos, ruleId.GetString());
+    if (infos.size() != 1) {
+        status.setStatusCode(RC_FAIL, "\"details\": \"not found the rule error!\"");
+        return;
+    }
+
+    Document jsonData;
+    jsonData.Parse(infos[0].nJsonData.c_str());
+    Value &enabled = jsonData["trigger"]["switch"]["triggerEnabled"];
+
+    infos[0].nEnable = atoi(enable.GetString());
+
+    if (infos[0].nEnable) {
+        enabled.SetString("on", 2);
+        ruleEngine().enableRule(infos[0].nRuleId, infos[0].nScriptData, true);
+    } else {
+        enabled.SetString("off", 3);
+        ruleEngine().disableRule(infos[0].nRuleId, true);
+    }
+
+    StringBuffer buffer;
+    Writer<StringBuffer> writer(buffer);
+    jsonData.Accept(writer);
+
+    infos[0].nJsonData = buffer.GetString();
+
+    mainDB().updateOrInsert(infos[0]);
+
+    std::string extstr;
+    extstr.append("\"sceneId\":\"").append(infos[0].nRuleId).append("\"");
+    status.setStatusCode(RC_SUCCESS, extstr);
+    return;
+}/*}}}*/
+
 extern void initRulesAPI(APP& app)
 {
     CROW_ROUTE(app, "/api/familyscene/add").methods(REST_POST)(_add);
@@ -449,6 +541,7 @@ extern void initRulesAPI(APP& app)
     CROW_ROUTE(app, "/api/familyscene/query").methods(REST_POST)(_query);
     CROW_ROUTE(app, "/api/familyscene/listall").methods(REST_POST)(_listall);
     CROW_ROUTE(app, "/api/familyscene/execute").methods(REST_POST)(_execute);
+    CROW_ROUTE(app, "/api/familyscene/enable").methods(REST_POST)(_enable);
 }
 
 } /* namespace HB */

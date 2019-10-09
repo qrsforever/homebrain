@@ -8,13 +8,15 @@
 
 #include "DeviceDataChannel.h"
 #include "RuleEventHandler.h"
+#include "RuleEngineService.h"
 #include "RuleEventTypes.h"
+#include "HBGlobalTable.h"
 #include "InstancePayload.h"
 #include "MainPublicHandler.h"
 #include "MessageTypes.h"
 #include "Common.h"
 #include "Log.h"
-#include <map>
+#include "HBDatabase.h"
 
 using namespace UTILS;
 
@@ -61,7 +63,18 @@ void DeviceDataChannel::statusChanged(const std::string &deviceId, const std::st
             }
             break;
         case 0: /* HB_DEVICE_STATUS_UNINITIALIZED */
+            break;
         case 1: /* HB_DEVICE_STATUS_INITIALIZING */
+            {
+#if 0
+                /* TODO ugly, but not dangerouse, will update db table back again after call executeScene */
+                std::vector<SmartHomeInfo> infos;
+                mainDB().queryBy(infos, SCENE_MODE_FILED);
+                if (infos.size() == 1)
+                    ruleEngine().executeScene(infos[0].nValue, "default", false);
+#endif
+            }
+            break;
         default:
             break;
     }
@@ -79,6 +92,7 @@ void DeviceDataChannel::propertyChanged(const std::string &deviceId, const std::
 bool DeviceDataChannel::send(int action, std::shared_ptr<Payload> data)
 {
     if (action == PT_INSTANCE_PAYLOAD) {
+        bool async = true;
         std::shared_ptr<InstancePayload> payload(std::dynamic_pointer_cast<InstancePayload>(data));
         if (payload) {
             LOGI("setPropertyValue(%s, %s, %s)\n",
@@ -88,7 +102,9 @@ bool DeviceDataChannel::send(int action, std::shared_ptr<Payload> data)
             deviceManager().SetDevicePropertyValue(
                 outerOfInsname(payload->mInsName),
                 payload->mSlots[0].nName,
-                payload->mSlots[0].nValue, true);
+                payload->mSlots[0].nValue, async);
+            if (async)
+                usleep(20000);
         }
     }
     return true;

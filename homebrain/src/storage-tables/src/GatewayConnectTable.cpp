@@ -7,8 +7,7 @@
  ****************************************************************************/
 
 #include "GatewayConnectTable.h"
-#include "Log.h"
-
+#include "SQLiteLog.h"
 #include "Common.h"
 
 using namespace UTILS;
@@ -47,7 +46,7 @@ GatewayConnectTable::~GatewayConnectTable()
 
 bool GatewayConnectTable::updateOrInsert(const GatewayTableInfo &info)
 {/*{{{*/
-    LOGD("update gateway: %s\n", info.nGid.c_str());
+    SQL_LOGD("update gateway: %s\n", info.nGid.c_str());
 
     Mutex::Autolock _l(&mMutex);
 
@@ -72,7 +71,7 @@ bool GatewayConnectTable::updateOrInsert(const GatewayTableInfo &info)
 
 bool GatewayConnectTable::deleteBy(const GatewayTableInfo &info, const std::string &where)
 {/*{{{*/
-    LOGD("delete gateway\n");
+    SQL_LOGD("delete gateway\n");
 
     Mutex::Autolock _l(&mMutex);
 
@@ -113,7 +112,7 @@ bool GatewayConnectTable::deleteBy(const GatewayTableInfo &info, const std::stri
 
 bool GatewayConnectTable::queryBy(std::vector<GatewayTableInfo> &infos, const GatewayTableInfo &filter, const std::string &where)
 {/*{{{*/
-    LOGD("query\n");
+    SQL_LOGD("query\n");
 
     Mutex::Autolock _l(&mMutex);
 
@@ -165,7 +164,5 @@ bool GatewayConnectTable::queryBy(std::vector<GatewayTableInfo> &infos, const Ga
     }
     return true;
 }/*}}}*/
-
-
 
 } /* namespace HB */

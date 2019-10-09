@@ -1,8 +1,9 @@
 {
     "devicetype": "oic.d.kk_sosalarm",
+    "supertype": "oic.d.sosalarm",
     "devicename": "控客SOS报警",
     "manufacture": "Konke",
-    "version": "0.9.2",
+    "version": "0.9.3",
     "profile": {
         "OnlineState": {
             "tag": "在线状态",

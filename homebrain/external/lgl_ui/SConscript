@@ -1,0 +1,50 @@
+##
+# clips build script
+##
+
+Import('env')
+
+lgl_env = env.Clone()
+
+target_os = lgl_env.get('TARGET_OS')
+
+lgl_env.AppendUnique(CPPPATH = [
+        './include',
+        ])
+
+lgl_env.AppendUnique(CDEFINES = ['ALLOW_ENVIRONMENT_GLOBALS=0'])
+
+
+lgl_env.AppendUnique(CXXFLAGS = ['-Wno-error=narrowing'])
+
+lgl_env.AppendUnique(CFLAGS = [
+    # '-Wundef',
+    # '-Wpointer-arith',
+    # '-Wshadow',
+    # '-Wcast-qual',
+    # '-Winline',
+    # '-Wmissing-declarations',
+    # '-Wredundant-decls',
+    # '-Wmissing-prototypes',
+    # '-Wnested-externs',
+    # '-Wstrict-prototypes',
+    # '-Waggregate-return',
+    # '-Wno-implicit',
+    '-Wno-error=narrowing',
+    '-Wno-error=unused-result',
+    '-Wno-error=maybe-uninitialized',
+    '-Wno-error=unused-parameter',
+    '-Wno-error=unused-but-set-variable'
+])
+
+lgl_env.AppendUnique(RPATH = [lgl_env.get('BUILD_DIR')])
+
+lgl_core_src = [
+    'main_temp.cpp',
+    'iot485.cpp',
+    'iotSock.cpp',
+#    'interfaceControl.cpp',
+]
+
+static_libclips = lgl_env.StaticLibrary('lgl_ui', lgl_core_src)
+#lgl_env.InstallTarget(static_liblgl, 'lgl_ui')

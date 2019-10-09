@@ -114,6 +114,14 @@ public:
     int GetDeviceList(std::map<std::string, std::string>& deviceList);
 
     /**
+     * API to get the owned list of devices
+     *
+     * @param[out] std::map<std::string, std::string>& deviceList. key is device id. value is device type.
+     * @return 0:success -1:fail.
+     */
+    int GetOwnedDeviceList(std::map<std::string, std::string>& deviceList);
+
+    /**
      * API to get devices by type
      *
      * @param[in] std::string deviceType.
@@ -194,6 +202,14 @@ public:
      * @return 0:success -1:fail.
      */
     int EnableGatewayNet(std::string gatewayId);
+
+    /**
+     * API to refresh devices' online status 
+     *
+     * @param[in] gatewayId: gateway ID
+     * @return 0:success -1:fail.
+     */
+    int RefreshOnlineStatus(std::string gatewayId);
 
     /**
      * API to delete subdev.

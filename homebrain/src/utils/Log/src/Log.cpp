@@ -154,6 +154,13 @@ void enableLogPool()
 }
 
 extern "C"
+void finishLogPool()
+{
+    // UTILS::LogPool *logPool = &UTILS::LogPool::getInstance();
+    // logPool->onEnd();
+}
+
+extern "C"
 char* getModuleLogNames(char* names, int len)
 {
     if (!names || len <= 0)
@@ -179,3 +186,4 @@ void initLogThread()
         g_logThread->start();
     }
 }
+

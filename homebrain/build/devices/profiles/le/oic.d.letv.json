@@ -1,5 +1,6 @@
 {
     "devicetype": "oic.d.letv",
+    "supertype": "oic.d.tv",
     "devicename": "乐视电视",
     "manufacture": "Le",
     "version": "0.9.2",

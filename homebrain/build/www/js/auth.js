@@ -17,7 +17,7 @@ Auth.prototype.tokenCheck = function() {
             sendMessage(events.LOGIN_UI);
             return;
         }
-        console.log("userinfo: %s", responseText);
+        // console.log("userinfo: %s", responseText);
         try {
             var responseData = JSON.parse(responseText);
             if (!responseData["logged_in"])
@@ -37,7 +37,7 @@ Auth.prototype.tokenCheck = function() {
 }
 
 Auth.prototype.initUI = function() {
-    console.log("Auth initUI");
+    // console.log("Auth initUI");
 
     var form = document.getElementById("login-form");
     var usernameInput = document.getElementById("login-username");
@@ -53,7 +53,7 @@ Auth.prototype.initUI = function() {
 }
 
 Auth.prototype.submitLogin = function() {
-    console.log("Auth submitLogin");
+    // console.log("Auth submitLogin");
     var submitButton = document.getElementById("login-submit");
     var usernameInput = document.getElementById("login-username");
     var passwordInput = document.getElementById("login-password");

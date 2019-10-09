@@ -1,0 +1,9 @@
+##
+# external build script
+##
+
+SConscript('iotivity-constrained/SConscript')
+SConscript('clips/SConscript')
+SConscript('kk_bridge/SConscript')
+SConscript('lgl_ui/SConscript')
+SConscript('lecloud2/SConscript')

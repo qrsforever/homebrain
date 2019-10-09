@@ -74,6 +74,7 @@ void setLogLevel(int level);
 
 extern int gSqliteModuleLevel;
 
+#define SQL_LOGA(args...)  _LOGA(gSqliteModuleLevel, args)
 #define SQL_LOGE(args...)  _LOGE(gSqliteModuleLevel, args)
 #define SQL_LOGW(args...)  _LOGW(gSqliteModuleLevel, args)
 #define SQL_LOGD(args...)  _LOGD(gSqliteModuleLevel, args)

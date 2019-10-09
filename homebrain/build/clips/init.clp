@@ -1,6 +1,7 @@
 ;=================================================================
 ; date: 2018-06-04 20:21:39
 ; title: Unit Test
+; author: QRS
 ;=================================================================
 
 (defglobal
@@ -37,9 +38,7 @@
 (load* (str-cat ?*ROOT-DIR* "/" utils.clp))
 (load* (str-cat ?*ROOT-DIR* "/" rulecontext.clp))
 (load* (str-cat ?*ROOT-DIR* "/" scenecontext.clp))
-
-; only for demo
-; (load* (str-cat ?*ROOT-DIR* "/" devices.clp))
+(load* (str-cat ?*ROOT-DIR* "/" devices.clp))
 
 (defrule load-files
     (init)
@@ -56,9 +55,11 @@
 )
 
 (defrule init-finished
-    (init)
-    (load-finished)
+    ?f1 <- (init)
+    ?f2 <- (load-finished)
   =>
+    (retract ?f1)
+    (retract ?f2)
     ; Simulate Test Case
     ; (reset)
     (if ?*TEST-CASE*
@@ -68,13 +69,13 @@
     )
     (if (>= ?*LOG-LEVEL* ?*LOG-LEVEL-TRACE*)
      then
-        (printout trace crlf ">>>>>> list globals:" crlf)
+        (printout trace ">>>>>> list globals:" crlf)
         (show-defglobals)
-        (printout trace crlf ">>>>>> list defclasses:" crlf)
+        (printout trace ">>>>>> list defclasses:" crlf)
         (list-defclasses)
-        (printout trace crlf ">>>>>> list defrules:" crlf)
+        (printout trace ">>>>>> list defrules:" crlf)
         (list-defrules)
-        (printout trace crlf ">>>>>> list deffunctions:" crlf)
+        (printout trace ">>>>>> list deffunctions:" crlf)
         (list-deffunctions)
         (printout trace crlf)
     )
@@ -84,6 +85,18 @@
     (init-finished)
 
     (assert (start-homebrain))
+)
+
+; TODO
+(defrule init-micro-services
+    ?f <- (load-micro-services)
+  =>
+    (printout trace ">>>>>> load micro services <<<<<<<" crlf)
+    (retract ?f)
+
+    (load* (str-cat ?*ROOT-DIR* "/ms/" rul-ms-autolight-service.clp))
+    (load* (str-cat ?*ROOT-DIR* "/ms/" rul-ms-gradlight-service.clp))
+    (load* (str-cat ?*ROOT-DIR* "/ms/" rul-ms-sosalarm-service.clp))
 )
 
 ;-----------------------------------------------------------------

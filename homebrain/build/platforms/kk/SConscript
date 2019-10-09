@@ -11,3 +11,11 @@ top_dir = env.get('SRC_DIR')
 ## Build MQTT
 platform = os.path.basename(os.getcwd())
 SConscript(os.path.join(top_dir, 'out', platform, 'extlibs', 'mqtt', 'SConscript'))
+
+SConscript('#extlibs/mbedtls/SConscript')
+SConscript('#extlibs/boost/SConscript')
+SConscript('#extlibs/sqlite3/SConscript')
+SConscript('#extlibs/tinycbor/SConscript')
+SConscript('#extlibs/cjson/SConscript')
+SConscript('#extlibs/uuid/SConscript')
+SConscript('#extlibs/libcurl/SConscript')

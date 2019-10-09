@@ -73,9 +73,9 @@ __Check_and_Copy $release_dir/libipca.so $dst_lib_dir
 __Check_and_Copy $release_dir/libHB_RuleEngine.so $dst_lib_dir
 __Check_and_Copy $release_dir/libHB_Utils.so $dst_lib_dir
 __Check_and_Copy $release_dir/libHB_GWAgent.so $dst_lib_dir
+__Check_and_Copy $release_dir/libHB_StorageTable.so $dst_lib_dir
 __Check_and_Copy $release_dir/libiotivity-constrained-server.so $dst_lib_dir
 __Check_and_Copy $release_dir/libuuid.so $dst_lib_dir
-__Check_and_Copy $release_dir/libcurl.so $dst_lib_dir
 
 #-----------------------------------------------------------------
 #  copy pkgconfg file
@@ -93,7 +93,6 @@ __Check_and_Copy $release_dir/libcurl.so $dst_lib_dir
 __Check_and_Copy $release_dir/iotsystem $output_dir/usr/bin
 __Check_and_Copy $release_dir/smarthb $output_dir/usr/bin
 __Check_and_Copy $release_dir/kk_bridge $output_dir/usr/bin
-__Check_and_Copy $current_dir/curl $output_dir/usr/bin
 __Check_and_Copy $current_dir/hue_bridge $output_dir/usr/bin
 __Check_and_Copy $current_dir/kk_bridge.sh $output_dir/usr/bin
 __Check_and_Copy $current_dir/hue_bridge.sh $output_dir/usr/bin

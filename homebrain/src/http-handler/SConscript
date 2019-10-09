@@ -29,10 +29,10 @@ http_handler_src = [
     'src/restapi/GatewaysAPI.cpp',
     'src/restapi/DevicesAPI.cpp',
     'src/restapi/RulesAPI.cpp',
+    'src/restapi/ScenesAPI.cpp',
     ]
 
 http_env.AppendUnique(LIBS=[
-    'hbstoragetable',
     'HB_Utils',
     'HB_RuleEngine',
 ])

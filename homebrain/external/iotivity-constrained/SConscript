@@ -1,0 +1,267 @@
+#******************************************************************
+
+Import('env')
+import SCons.Errors
+import os
+import sys
+import re
+import subprocess
+from shutil import copyfile
+
+target_os = env.get('TARGET_OS')
+root_dir = env.get('SRC_DIR')
+iotivitylite_dir = os.path.join(root_dir, 'homebrain', 'external', 'iotivity-constrained')
+start_dir = os.getcwd()
+
+if not os.path.exists(iotivitylite_dir):
+    msg = '''
+*********************************** Error: ************************************
+* The iotivity constrained can not be found.
+* Please add it to homebrain/external/iotivity-constrained/
+*******************************************************************************
+'''
+    Exit(msg)
+
+os.chdir(iotivitylite_dir)
+
+os.chdir(start_dir)
+
+iotivitylite_env = env.Clone()
+
+iotivitylite_env.AppendUnique(CPPPATH=[
+    iotivitylite_dir,
+    os.path.join(iotivitylite_dir, 'include'),
+    os.path.join(iotivitylite_dir, 'port', 'linux'),
+    os.path.join(iotivitylite_dir, 'port', 'linux', 'deps/mbedtls/include')
+])
+
+iotivitylite_env.PrependUnique(CPPPATH=[
+    os.path.join(iotivitylite_dir, 'deps/mbedtls/include'),
+])
+
+if not iotivitylite_env.get('RELEASE'):
+    iotivitylite_env.AppendUnique(CFLAGS=['-DOC_DEBUG'])
+    iotivitylite_env.AppendUnique(CFLAGS=['-Wno-error=format'])
+
+######################################################################
+# Source files and Target(s)
+######################################################################
+common_src = [
+    'util/oc_etimer.c',
+    'util/oc_list.c',
+    'util/oc_memb.c',
+    'util/oc_mem_trace.c',
+    'util/oc_mmem.c',
+    'util/oc_process.c',
+    'util/oc_timer.c'
+]
+
+cbor_src = env['cbor_files'] 
+
+messaging_src = [
+    'messaging/coap/coap.c',
+    'messaging/coap/engine.c',
+    'messaging/coap/observe.c',
+    'messaging/coap/separate.c',
+    'messaging/coap/transactions.c'
+]
+
+api_src = [
+    'api/oc_base64.c',
+    'api/oc_blockwise.c',
+    'api/oc_buffer.c',
+    'api/oc_client_api.c',
+    'api/oc_collection.c',
+    'api/oc_core_res.c',
+    'api/oc_discovery.c',
+    'api/oc_endpoint.c',
+    'api/oc_helpers.c',
+    'api/oc_introspection.c',
+    'api/oc_main.c',
+    'api/oc_network_events.c',
+    'api/oc_rep.c',
+    'api/oc_ri.c',
+    'api/oc_scene.c',
+    'api/oc_server_api.c',
+    'api/oc_session_events.c',
+    'api/oc_uuid.c'
+]
+
+iotivitylite_env.AppendUnique(CFLAGS=['-DOC_IPV4'])
+if target_os == 'android':
+    port_src = [
+        'port/android/abort.c',
+        'port/android/clock.c',
+        'port/android/ifaddrs-android.c',
+        'port/android/ipadapter.c',
+        'port/android/random.c',
+        'port/android/storage.c'
+    ]
+    iotivitylite_env.AppendUnique(LIBS=['log'])
+
+
+elif target_os == 'linux':
+    port_src = [
+        'port/linux/abort.c',
+        'port/linux/clock.c',
+        'port/linux/ipadapter.c',
+        'port/linux/random.c',
+        'port/linux/storage.c',
+        'port/linux/tcpadapter.c'
+    ]
+
+security_src = [
+    'security/oc_acl.c',
+    'security/oc_cred.c',
+    'security/oc_doxm.c',
+    'security/oc_pstat.c',
+    'security/oc_tls.c',
+    'security/oc_svr.c',
+    'security/oc_store.c',
+    'deps/mbedtls/library/aes.c',
+    'deps/mbedtls/library/aesni.c', 	
+    'deps/mbedtls/library/arc4.c',	
+    'deps/mbedtls/library/asn1parse.c',	
+    'deps/mbedtls/library/asn1write.c',
+    'deps/mbedtls/library/base64.c',
+    'deps/mbedtls/library/bignum.c',
+    'deps/mbedtls/library/blowfish.c',
+    'deps/mbedtls/library/camellia.c',
+    'deps/mbedtls/library/ccm.c',
+    'deps/mbedtls/library/cipher.c',
+    'deps/mbedtls/library/cipher_wrap.c',
+    'deps/mbedtls/library/cmac.c',
+    'deps/mbedtls/library/ctr_drbg.c',
+    'deps/mbedtls/library/des.c',
+    'deps/mbedtls/library/dhm.c',
+    'deps/mbedtls/library/ecdh.c',
+    'deps/mbedtls/library/ecdsa.c',
+    'deps/mbedtls/library/ecjpake.c',
+    'deps/mbedtls/library/ecp.c',
+    'deps/mbedtls/library/ecp_curves.c',
+    'deps/mbedtls/library/entropy.c',
+    'deps/mbedtls/library/entropy_poll.c',	
+    'deps/mbedtls/library/error.c',
+    'deps/mbedtls/library/gcm.c',
+    'deps/mbedtls/library/havege.c',
+    'deps/mbedtls/library/hmac_drbg.c',
+    'deps/mbedtls/library/md.c',
+    'deps/mbedtls/library/md2.c',
+    'deps/mbedtls/library/md4.c',
+    'deps/mbedtls/library/md5.c',
+    'deps/mbedtls/library/md_wrap.c',
+    'deps/mbedtls/library/oid.c',
+    'deps/mbedtls/library/padlock.c',
+    'deps/mbedtls/library/pem.c',
+    'deps/mbedtls/library/pk.c',
+    'deps/mbedtls/library/pk_wrap.c',
+    'deps/mbedtls/library/pkcs12.c',
+    'deps/mbedtls/library/pkcs5.c',
+    'deps/mbedtls/library/pkparse.c',
+    'deps/mbedtls/library/pkwrite.c',
+    'deps/mbedtls/library/platform.c',
+    'deps/mbedtls/library/ripemd160.c',
+    'deps/mbedtls/library/rsa.c',
+    'deps/mbedtls/library/sha1.c',
+    'deps/mbedtls/library/sha256.c',
+    'deps/mbedtls/library/sha512.c',
+    'deps/mbedtls/library/threading.c',
+    'deps/mbedtls/library/timing.c',
+    'deps/mbedtls/library/version.c',
+    'deps/mbedtls/library/version_features.c',		
+    'deps/mbedtls/library/xtea.c',
+    'deps/mbedtls/library/pkcs11.c',
+    'deps/mbedtls/library/x509.c',
+    'deps/mbedtls/library/x509_crt.c',
+    'deps/mbedtls/library/debug.c',
+    'deps/mbedtls/library/net_sockets.c',
+    'deps/mbedtls/library/ssl_cache.c',
+    'deps/mbedtls/library/ssl_ciphersuites.c',	
+    'deps/mbedtls/library/ssl_cli.c',
+    'deps/mbedtls/library/ssl_cookie.c',	
+    'deps/mbedtls/library/ssl_srv.c',
+    'deps/mbedtls/library/ssl_ticket.c',
+    'deps/mbedtls/library/ssl_tls.c',
+    'deps/mbedtls/library/rsa_internal.c'
+]
+
+server_env = iotivitylite_env.Clone()
+server_env.AppendUnique(OBJPREFIX='sr-')
+server_env.AppendUnique(CFLAGS=['-DOC_SERVER'])
+server_env.AppendUnique(CFLAGS=['-DOC_DYNAMIC_ALLOCATION'])
+server_env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME']=1
+
+server_obj = server_env.Object(common_src) + server_env.Object(cbor_src)
+server_obj = server_obj + server_env.Object(messaging_src)
+server_obj = server_obj + server_env.Object(api_src)
+server_obj = server_obj + server_env.Object(port_src)
+if server_env.get('SECURE') == '1':
+    server_env.AppendUnique(CFLAGS=['-DOC_SECURITY'])
+    server_env.AppendUnique(CFLAGS=['-DTLSFLAGS'])
+    server_obj = server_obj + server_env.Object(security_src)
+
+static_server = server_env.StaticLibrary('libiotivity-constrained-server', server_obj)
+shared_server = server_env.SharedLibrary('libiotivity-constrained-server', server_obj)
+server_env.InstallTarget(static_server, 'libiotivity-constrained-server')
+server_env.InstallTarget(shared_server, 'libiotivity-constrained-server')
+
+
+client_env = iotivitylite_env.Clone()
+client_env.AppendUnique(OBJPREFIX='ct-')
+client_env.AppendUnique(CFLAGS=['-DOC_CLIENT'])
+client_env.AppendUnique(CFLAGS=['-DOC_DYNAMIC_ALLOCATION'])
+client_env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME']=1
+
+client_obj = client_env.Object(common_src) + client_env.Object(cbor_src)
+client_obj = client_obj + client_env.Object(messaging_src)
+client_obj = client_obj + client_env.Object(api_src)
+client_obj = client_obj + client_env.Object(port_src)
+if client_env.get('SECURE') == '1':
+    client_env.AppendUnique(CFLAGS=['-DOC_SECURITY'])
+    client_obj = client_obj + client_env.Object(security_src)
+    if client_env.get('DYNAMIC') == '1':
+        client_obj = client_obj + client_env.Object('security/oc_obt.c')
+
+static_client = client_env.StaticLibrary('libiotivity-constrained-client', client_obj)
+shared_client = client_env.SharedLibrary('libiotivity-constrained-client', client_obj)
+client_env.InstallTarget(static_client, 'libiotivity-constrained-client')
+client_env.InstallTarget(shared_client, 'libiotivity-constrained-client')
+
+
+client_server_env = iotivitylite_env.Clone()
+client_server_env.AppendUnique(OBJPREFIX='ctsr-')
+client_server_env.AppendUnique(CFLAGS=['-DOC_CLIENT', '-DOC_SERVER'])
+client_server_env.AppendUnique(CFLAGS=['-DOC_DYNAMIC_ALLOCATION'])
+client_server_env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME']=1
+
+client_server_obj = client_server_env.Object(common_src) + client_server_env.Object(cbor_src)
+client_server_obj = client_server_obj + client_server_env.Object(messaging_src)
+client_server_obj = client_server_obj + client_server_env.Object(api_src)
+client_server_obj = client_server_obj + client_server_env.Object(port_src)
+if client_server_env.get('SECURE') == '1':
+    client_server_env.AppendUnique(CFLAGS=['-DOC_SECURITY'])
+    client_server_obj = client_server_obj + client_server_env.Object(security_src)
+    if client_server_env.get('DYNAMIC') == '1':
+        client_server_obj = client_server_obj + client_server_env.Object('security/oc_obt.c')
+
+static_client_server = client_server_env.StaticLibrary('libiotivity-constrained-client-server', client_server_obj)
+shared_client_server = client_server_env.SharedLibrary('libiotivity-constrained-client-server', client_server_obj)
+client_server_env.InstallTarget(static_client_server, 'libiotivity-constrained-client-server')
+client_server_env.InstallTarget(shared_client_server, 'libiotivity-constrained-client-server')
+
+
+######################################################################
+# apps
+######################################################################
+if target_os != 'android':
+    apps_env = iotivitylite_env.Clone()
+
+    apps_env.AppendUnique(LIBS=['m'])
+    apps_env.AppendUnique(LIBPATH=start_dir)
+    #apps_env.AppendUnique(LINKFLAGS=['-static'])
+
+    server = apps_env.Program('server', ['apps/server_linux.c'], CFLAGS=['-DOC_SERVER'], LIBS=['iotivity-constrained-server', 'm'])
+    client = apps_env.Program('client', ['apps/client_linux.c'], CFLAGS=['-DOC_CLIENT'], LIBS=['iotivity-constrained-client', 'm'])
+    simpleserver = apps_env.Program('simpleserver', ['apps/simpleserver.c'], CFLAGS=['-DOC_SERVER'], LIBS=['iotivity-constrained-server', 'm'])
+    simpleclient = apps_env.Program('simpleclient', ['apps/simpleclient.c'], CFLAGS=['-DOC_CLIENT'], LIBS=['iotivity-constrained-client', 'm'])
+    simplekk = apps_env.Program('simple_kk_bridge', ['apps/simple_kk_bridge.c'], CFLAGS=['-DOC_CLIENT'], LIBS=['iotivity-constrained-client', 'm'])

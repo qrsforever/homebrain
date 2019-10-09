@@ -18,7 +18,7 @@
 
 using namespace UTILS;
 
-#define TIMER_MSECONDS 1000 /* 1s */
+#define TIMER_MSECONDS 200
 
 namespace HB {
 

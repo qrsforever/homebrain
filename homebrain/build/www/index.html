@@ -14,6 +14,7 @@
         <script src="js/nav-gateways.js" ></script>
         <script src="js/nav-devices.js" ></script>
         <script src="js/nav-rules.js" ></script>
+        <script src="js/nav-scenes.js" ></script>
         <script src="js/main.js" ></script>
         <title>le</title>
     </head>
@@ -40,6 +41,9 @@
                         </li>
                         <li id="nav-rules" class="nav-links">
                             <a onclick="showRules()"> {{tab_title_rules}} </a>
+                        </li>
+                        <li id="nav-scenes" class="nav-links">
+                            <a onclick="showScenes()"> {{tab_title_scenes}} </a>
                         </li>
                     </ul>
                 </nav>
@@ -82,7 +86,7 @@
             <!--  login -->
             <div id="page-login" class="form-container" style="display:none">
                 <h1 class="form-title"> {{login_header}} </h1>
-                <p class="form-info-text"> {{login_text"}} </p>
+                <p class="form-info-text"> {{login_text}} </p>
                 <form id="login-form" class="form" onSubmit="submitLogin();return false;">
                     <input
                         id="login-username"
@@ -155,7 +159,7 @@
             <!-- rules  -->
             <div id="rules" style="display:none">
                 <div class="page-header">
-                    <h1 class="page-title"><span id="scene">{{tab_title_rules}}&nbsp;</span></h1>
+                    <h1 class="page-title"><span id="rules">{{tab_title_rules}}&nbsp;</span></h1>
                     <button class="default-icon-button add-icon" onClick="openRuleCreationModal()"></button>
                 </div>
                 <div id="introduction-rules" class="page-introduction">
@@ -165,11 +169,24 @@
                         <span>{{page_intro_rules_main_2}}</span>
                     </div>
                 </div>
-                <div id="body-rules" class="rules-container">
+                <div id="body-rules" class="rule-container">
                     <!-- Rules will be injected here -->
                 </div>
             </div>
             <!-- rules  -->
+
+            <!-- scenes -->
+            <div id="scenes" style="display:none">
+                <div class="page-header">
+                    <h1 class="page-title"><span id="scenes">{{tab_title_scene}}&nbsp;</span></h1>
+                </div>
+                <div id="introduction-scenes" class="page-introduction">
+                </div>
+                <div id="body-scenes" class="scene-container">
+                    <!-- Scenes will be injected here -->
+                </div>
+            </div>
+            <!-- scenes -->
 
         </div>
 

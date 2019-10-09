@@ -1,9 +1,10 @@
 {
     "devicetype": "oic.d.hue_ct_light",
+    "supertype": "oic.d.light",
     "devicename": "飞利浦带色温灯",
     "manufacture": "Philips",
     "iconid": "ic_default_light",
-    "version": "0.9.2",
+    "version": "0.9.3",
     "profile": {
         "OnlineState": {
             "tag": "在线状态",
@@ -38,11 +39,12 @@
             "unit": ""
         },
         "ct": {
+            "rt": "oic.r.colour.colourtemperature",
             "tag": "色温",
             "read": "T",
             "write": "T",
             "type": "int",
-            "range": "v >= 0 and v <= 360",
+            "range": "v >= 153 and v <= 500",
             "unit": ""
         }
     }

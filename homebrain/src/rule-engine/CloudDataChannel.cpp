@@ -419,6 +419,208 @@ bool ElinkCloudDataChannel::parseTimeString(const char *ctimestr, SlotPoint &slo
     return true;
 }/*}}}*/
 
+bool ElinkCloudDataChannel::parseScene(rapidjson::Value &jsondoc, std::shared_ptr<ScenePayload> payload)
+{/*{{{*/
+    rapidjson::Value &sceneName = jsondoc["sceneName"];
+    if (!sceneName.IsString()) {
+        LOGE("parse scene name error!\n");
+        return false;
+    }
+    rapidjson::Value &sceneId = jsondoc["sceneId"];
+    if (!sceneId.IsString() || sceneId.GetStringLength() < 1) {
+        LOGE("parse scene id error!\n");
+        return false;
+    }
+    rapidjson::Value &scene = jsondoc["scene"];
+    if (!scene.IsObject()) {
+        LOGE("parse scene.scene error!\n");
+        return false;
+    }
+    bool flag = false;
+    if (scene.HasMember("onEnter")) {
+        rapidjson::Value &onEnter = scene["onEnter"];
+        if (!onEnter.IsObject()) {
+            LOGE("parse onEnter object error!\n");
+            return false;
+        }
+        rapidjson::Value &deviceControl = onEnter["deviceControl"];
+        if (deviceControl.IsArray() && deviceControl.Size() > 0) {
+            if (!parseDeviceControl(deviceControl, eON_ENTER, payload)) {
+                LOGE("parse onEnter.deviceControl error!\n");
+                return false;
+            }
+        }
+        rapidjson::Value &notifyContent = onEnter["notifyContent"];
+        if (notifyContent.IsArray() && notifyContent.Size() > 0) {
+            if (!parseNotifyContent(notifyContent, eON_ENTER, payload)) {
+                LOGE("parse onEnter.notifyContent error!\n");
+                return false;
+            }
+        }
+        rapidjson::Value &microservice = onEnter["microService"];
+        if (microservice.IsArray() && microservice.Size() > 0) {
+            if (!parseMicroService(microservice, eON_ENTER, payload)) {
+                LOGE("parse onEnter.microService error!\n");
+                return false;
+            }
+        }
+        flag = true;
+    }
+
+    if (scene.HasMember("onExit")) {
+        rapidjson::Value &onExit = scene["onExit"];
+        if (!onExit.IsObject()) {
+            LOGE("parse onExit object error!\n");
+            return false;
+        }
+        rapidjson::Value &deviceControl = onExit["deviceControl"];
+        if (deviceControl.IsArray() && deviceControl.Size() > 0) {
+            if (!parseDeviceControl(deviceControl, eON_EXIT, payload)) {
+                LOGE("parse onExit.deviceControl error!\n");
+                return false;
+            }
+        }
+        rapidjson::Value &notifyContent = onExit["notifyContent"];
+        if (notifyContent.IsArray() && notifyContent.Size() > 0) {
+            if (!parseNotifyContent(notifyContent, eON_EXIT, payload)) {
+                LOGE("parse onEnter.notifyContent error!\n");
+                return false;
+            }
+        }
+        flag = true;
+    }
+
+    if (scene.HasMember("onStory")) {
+        rapidjson::Value &onStory = scene["onStory"];
+        if (!onStory.IsObject()) {
+            LOGE("parse onStory object error!\n");
+            return false;
+        }
+        rapidjson::Value &microservice = onStory["microService"];
+        if (microservice.IsArray() && microservice.Size() > 0) {
+            if (!parseMicroService(microservice, eON_STORY, payload)) {
+                LOGE("parse onStory.microService error!\n");
+                return false;
+            }
+        }
+        flag = true;
+    }
+    if (!flag) {
+        LOGE("parse json error!\n");
+        return false;
+    }
+    payload->mSid = sceneId.GetString();
+    payload->mName = sceneName.GetString();
+    payload->mRoom = "default";
+    return true;
+}/*}}}*/
+
+bool ElinkCloudDataChannel::parseDeviceControl(rapidjson::Value &controls, ms_on_event_t event, std::shared_ptr<ScenePayload> payload)
+{/*{{{*/
+    for (size_t i = 0; i < controls.Size(); ++i) {
+        rapidjson::Value &ctl = controls[i];
+        rapidjson::Value &did = ctl["deviceId"];
+        rapidjson::Value &pro = ctl["propName"];
+        rapidjson::Value &val = ctl["propValue"];
+        if (!did.IsString() || !pro.IsString() || !val.IsString())
+            return false;
+        payload->addDeviceCtrl(event, did.GetString(), pro.GetString(), val.GetString());
+    }
+    return true;
+}/*}}}*/
+
+bool ElinkCloudDataChannel::parseNotifyContent(rapidjson::Value &contents, ms_on_event_t event, std::shared_ptr<ScenePayload> payload)
+{/*{{{*/
+    for (size_t i = 0; i < contents.Size(); ++i) {
+        rapidjson::Value &ntf = contents[i];
+        rapidjson::Value &sceneId = ntf["sceneId"];
+        rapidjson::Value &sceneName = ntf["sceneName"];
+        rapidjson::Value &enable = ntf["enable"];
+        if (!sceneId.IsString() || !enable.IsString() || !sceneName.IsString())
+            return false;
+        std::string nid(NOID_RULE_ENABLE);
+        if (strncmp("1", enable.GetString(), 1))
+            nid.assign(NOID_RULE_DISABLE);
+        payload->addNotifyContent(event, nid, sceneId.GetString(), sceneName.GetString());
+    }
+    return true;
+}/*}}}*/
+
+bool ElinkCloudDataChannel::parseMicroService(rapidjson::Value &services, ms_on_event_t event, std::shared_ptr<ScenePayload> payload)
+{/*{{{*/
+    for (size_t i = 0; i < services.Size(); ++i) {
+        rapidjson::Value &svr = services[i];
+        rapidjson::Value &name = svr["name"];
+        rapidjson::Value &msid = svr["msid"];
+        rapidjson::Value &deps = svr["deps"];
+        if (!name.IsString() || !msid.IsString()) {
+            LOGE("parse onEnter.microService[%d] error!\n", i);
+            return false;
+        }
+        std::string depends("");
+        if (!deps.IsNull() and deps.IsString())
+            depends = deps.GetString();
+        if (0 == strncmp("autolight", name.GetString(), 9)) {
+            rapidjson::Value &params = svr["params"];
+            if (!params.IsObject()) {
+                LOGE("parse [%d].microService[%d] params error!\n", event, i);
+                return false;
+            }
+            rapidjson::Value &lightUUID = params["lightUUID"];
+            rapidjson::Value &lightStep = params["lightStep"];
+            rapidjson::Value &sensorUUID = params["sensorUUID"];
+            rapidjson::Value &sensorIll = params["sensorIll"];
+            if (!lightUUID.IsString() || !lightStep.IsString() ||
+                !sensorUUID.IsString() || !sensorIll.IsString()) {
+                LOGE("parse [%d].microService[%d] params error!\n", event, i);
+                return false;
+            }
+            payload->addAutoLightMS(event, msid.GetString(), depends, lightUUID.GetString(),
+                lightStep.GetString(), sensorUUID.GetString(), sensorIll.GetString());
+        } else if (0 == strncmp("gradlight", name.GetString(), 9)) {
+            rapidjson::Value &params = svr["params"];
+            if (!params.IsObject()) {
+                LOGE("parse [%d].microService[%d] params error!\n", event, i);
+                return false;
+            }
+            rapidjson::Value &lightUUID = params["lightUUID"];
+            rapidjson::Value &direction = params["direction"];
+            rapidjson::Value &stepCount = params["stepCount"];
+            rapidjson::Value &timeSeconds = params["timeSeconds"];
+            if (!lightUUID.IsString() || !direction.IsString() ||
+                !stepCount.IsString() || !timeSeconds.IsString()) {
+                LOGE("parse [%d].microService[%d] params error!\n", event, i);
+                return false;
+            }
+            std::string timeMs = int2String(atoi(timeSeconds.GetString()) * 1000);
+            payload->addGradLightMS(event, msid.GetString(), depends, lightUUID.GetString(),
+                direction.GetString(), stepCount.GetString(), timeMs);
+        } else if (0 == strncmp("sosalarm", name.GetString(), 8)) {
+            rapidjson::Value &params = svr["params"];
+            if (!params.IsObject()) {
+                LOGE("parse [%d].microService[%d] params error!\n", event, i);
+                return false;
+            }
+            rapidjson::Value &sosUUID = params["sosUUID"];
+            rapidjson::Value &alarmUUID = params["alarmUUID"];
+            rapidjson::Value &lightUUID = params["lightUUID"];
+            rapidjson::Value &timeSeconds = params["timeSeconds"];
+            if (!sosUUID.IsString() || !alarmUUID.IsString() ||
+                !lightUUID.IsString() || !timeSeconds.IsString()) {
+                LOGE("parse [%d].microService[%d] params error!\n", event, i);
+                return false;
+            }
+            std::string timeMs = int2String(atoi(timeSeconds.GetString()) * 1000);
+            payload->addSosAlarmMS(event, msid.GetString(), depends, sosUUID.GetString(),
+                alarmUUID.GetString(), lightUUID.GetString(), timeMs);
+        } else {
+            LOGE("parse not support microService[%s] error!\n", name.GetString());
+            return false;
+        }
+    }
+    return true;
+}/*}}}*/
+
 #ifdef USE_TIMER_EVENT
 bool ElinkCloudDataChannel::parseTimeString(const char *ctimestr, TimeNode &node)
 {/*{{{*/
@@ -534,12 +736,20 @@ bool ElinkCloudDataChannel::parseConditions(rapidjson::Value &conditions, std::s
     else
         payload->mLHS->mNodeLogic.assign(conditionLogic.GetString());
 
+    if (conditions.HasMember("sceneCondition")) {
+        rapidjson::Value &scene = conditions["sceneCondition"];
+        if (scene.IsString() && scene.GetStringLength() > 1) {
+            LHSNode *node = &(payload->mLHS->makeNode("and"));
+            Condition &sceneCond = node->makeCond(CT_SCENE, "SceneContext", "noused");
+            sceneCond.makeSlot("where").append("none", "default");
+            sceneCond.makeSlot("target").append("none", scene.GetString());
+        }
+    }
+
     if (payload->mTimeCondEnable && conditions.HasMember("timeCondition")) {/*{{{*/
         rapidjson::Value &timeCondition = conditions["timeCondition"];
         if (timeCondition.IsArray() && timeCondition.Size() > 0) {
-            LHSNode *node = payload->mLHS.get();
-            if (timeCondition.Size() > 1)
-                node = &(payload->mLHS->makeNode("or"));
+            LHSNode *node = &(payload->mLHS->makeNode("or"));
             char fctID[8] = { 0 };
             for (size_t i = 0; i < timeCondition.Size(); ++i) {
                 rapidjson::Value &dt = timeCondition[i];
@@ -758,7 +968,7 @@ bool ElinkCloudDataChannel::parseActions(rapidjson::Value &actions, std::shared_
                 return false;
             }
             char id[9] = { 0 };
-            sprintf(id, "n-%u", rand() % 1000000000);
+            sprintf(id, "n-%06u", rand() % 1000000);
             payload->mRHS->makeAction(AT_NOTIFY, id, title.GetString(), message.GetString());
         }
     }/*}}}*/
@@ -788,6 +998,15 @@ bool ElinkCloudDataChannel::parseActions(rapidjson::Value &actions, std::shared_
                     deviceId.GetString(),
                     propName.GetString(), val);
             }
+        }
+    }/*}}}*/
+
+    if (actions.HasMember("execScene")) {/*{{{*/
+        rapidjson::Value &scene = actions["execScene"];
+        if (scene.IsString() && scene.GetStringLength() > 1) {
+            std::string assert;
+            assert.append("(switch-scene ").append(" default ").append(scene.GetString()).append(")");
+            payload->mRHS->makeAction(AT_ASSERT, assert);
         }
     }/*}}}*/
 

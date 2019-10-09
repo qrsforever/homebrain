@@ -64,6 +64,8 @@ public:
 
     std::string m_deviceId;
     std::string m_deviceType;
+    std::string m_deviceName;
+    std::string m_manufacture;
     IPCADeviceHandle m_deviceHandle;      // from IPCAOpenDevice();
     IPCAHandle m_observeHandle;           // from IPCAObserveResource();
     std::string m_resourceUri;            // keep function resource uri

@@ -24,6 +24,7 @@
 } while(false)
 
 enum LogLevel {
+    LOG_LEVEL_ASSERT  = 0x00,
     LOG_LEVEL_ERROR   = 0x01,
     LOG_LEVEL_WARNING = 0x02,
     LOG_LEVEL_INFO = 0x03,
@@ -33,6 +34,7 @@ enum LogLevel {
 
 #ifdef NULLDEBUG
 
+#define LOGA(args...) ((void)0)
 #define LOGE(args...) ((void)0)
 #define LOGW(args...) ((void)0)
 #define LOGI(args...) ((void)0)
@@ -42,6 +44,12 @@ enum LogLevel {
 #else /* NULLDEBUG */
 
 extern int g_logLevel;
+#define LOGA(args...) \
+do { \
+    if (g_logLevel >= LOG_LEVEL_ASSERT) \
+        logVerbose(__FILE__, __LINE__, __FUNCTION__, LOG_LEVEL_ASSERT, args); \
+} while(0)
+
 #define LOGE(args...) \
 do { \
     if (g_logLevel >= LOG_LEVEL_ERROR) \
@@ -82,6 +90,12 @@ struct LogModule {
 	int&        m_level;
 	LogModule*  m_next;
 };
+
+#define _LOGA(level,args...) \
+do { \
+    if (level >= LOG_LEVEL_ASSERT) \
+        logVerbose(__FILE__, __LINE__, __FUNCTION__, LOG_LEVEL_ASSERT, args); \
+} while(0)
 
 #define _LOGE(level,args...) \
 do { \
@@ -127,6 +141,7 @@ void setLogLevel(int level);
 
 void disableLogPool();
 void enableLogPool();
+void finishLogPool();
 
 int setModuleLogLevel(const char *name, int level);
 int getModuleLogLevel(const char *name);

@@ -5,6 +5,7 @@
 ##
 import os
 import subprocess
+import commands
 from distutils.version import LooseVersion
 
 Import('env')
@@ -37,6 +38,13 @@ if sysroot_dir:
         platform = os.environ.get("PROJECT_PLATFORM")
         if platform  == "cetron":
             env.AppendENVPath('STAGING_DIR', os.path.join(sysroot_dir, '..'))
+
+try:
+    cmd = 'PATH=%s; %s -print-sysroot' % (env['ENV']['PATH'], env.get('CC', 'gcc'))
+    sysroot = commands.getstatusoutput(cmd)[1].rstrip()
+    env.AppendENVPath('SYSROOT_DIR', sysroot)
+except AttributeError as err:
+    print("error")
 
 # Set release/debug flags
 if env.get('RELEASE'):

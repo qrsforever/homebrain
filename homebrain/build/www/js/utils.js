@@ -222,3 +222,84 @@ function parseRange(str) {
         return [result[1], result[2]];
     return [0, 0];
 }
+
+function genRandom(min, max) {
+      return (min + Math.round(Math.random()*(max-min)));
+}
+
+function handleEscAndEnterOnKeyEvent(inputElement, event) {
+    if (event.key === "Escape" || event.key === "Cancel") {
+        event.stopPropagation();
+        event.preventDefault();
+        inputElement.value = inputElement.defaultValue;
+        inputElement.blur();
+    }
+    if (event.key === "Enter" || event.key === "Accept") {
+        event.stopPropagation();
+        event.preventDefault();
+        inputElement.blur();
+    }
+}
+
+function buildInlineTextEdit(did, name, jsCode) {
+    var id = did + '_name'
+    var html = "";
+    html += '<label id="' + id + '" class="inline-edit" onclick="onInlineTextEditClicked(\'' + id + '\')">';
+    html += '    <span>' + name + '</span>';
+    html += '    <input';
+    html += '        style="display:none;"';
+    html += '        onkeydown="handleEscAndEnterOnKeyEvent(this, event)"';
+    html += '        onblur="onInlineTextEditBlur(\'' + id + '\')"';
+    html += '        data-oncommit="' + jsCode + '"';
+    html += '    />';
+    html += '</label>';
+    return html;
+}
+
+function updateInlineTextEdit(id, value) {
+    var element = document.getElementById(id);
+    if (element) {
+        var spanElements = element.getElementsByTagName("span");
+        if (spanElements && spanElements.length > 0) {
+            spanElements[0].textContent = value;
+        }
+    }
+}
+
+function onInlineTextEditClicked(id) {
+    var element = document.getElementById(id);
+    if (element) {
+        var spanElements = element.getElementsByTagName("span");
+        var inputElements = element.getElementsByTagName("input");
+        if (spanElements && spanElements.length > 0
+                && inputElements && inputElements.length > 0
+                && inputElements[0] !== document.activeElement) {
+            inputElements[0].defaultValue = spanElements[0].textContent;
+            inputElements[0].value = inputElements[0].defaultValue;
+            inputElements[0].style.display = "";
+            spanElements[0].style.display = "none";
+        }
+    }
+}
+
+function onInlineTextEditBlur(id) {
+    var element = document.getElementById(id);
+    if (element) {
+        var spanElements = element.getElementsByTagName("span");
+        var inputElements = element.getElementsByTagName("input");
+        if (spanElements && spanElements.length > 0
+                && inputElements && inputElements.length > 0) {
+            if (inputElements[0].value !== inputElements[0].defaultValue) {
+                spanElements[0].textContent = inputElements[0].value;
+                evalCallbackCodeOfInlineEdit.call(inputElements[0],
+                    inputElements[0].value);
+            }
+            inputElements[0].style.display = "none";
+            spanElements[0].style.display = "";
+        }
+    }
+}
+
+function evalCallbackCodeOfInlineEdit(value) {
+    eval(this.getAttribute("data-oncommit"));
+}

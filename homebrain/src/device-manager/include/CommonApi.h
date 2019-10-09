@@ -60,7 +60,11 @@ namespace OIC
                 const std::string KK_ENVSENSOR = "oic.d.kk_envsensor";
                 const std::string KK_SMART_PLUG = "oic.d.kk_smartplug";
                 const std::string KK_CURTAINCTRL = "oic.d.kk_curtainctrl";
+                const std::string KK_CURTAINMOTOR = "oic.d.kk_curtainmotor";
                 const std::string KK_SCENECTRL = "oic.d.kk_scenectrl";
+                const std::string KK_SCENECTRL1 = "oic.d.kk_scenectrl1";
+                const std::string KK_BOOLSENSOR = "oic.d.kk_boolsensor";
+                const std::string KK_ALARMER = "oic.d.kk_alarmer";
                 const std::string LE_TV = "oic.d.letv";
             }
 
@@ -77,6 +81,8 @@ namespace OIC
                 const std::string ILLUMINANCE = "oic.r.sensor.illuminance";
                 const std::string CURTAIN_STATUS = "oic.r.curtain.control";
                 const std::string SCENE_STATUS = "oic.r.scene.control";
+                const std::string BOOL_SENSOR = "oic.r.sensor.bool";
+                const std::string ALARMER = "oic.r.alarmer";
                 const std::string GATEWAY = "oic.r.gateway";
             }
 

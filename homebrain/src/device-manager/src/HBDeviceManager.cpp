@@ -33,8 +33,10 @@
 #include "CommonApi.h"
 #include "HBDeviceManager.h"
 #include "HBDeviceManagerLog.h"
+#include "OCFDeviceTable.h"
 
 #define UNUSED_PARAMETER(P)       (void)(P)
+using namespace HB;
 
 namespace OIC {
 namespace Service {
@@ -43,6 +45,7 @@ namespace HB {
 HBDeviceManager* HBDeviceManager::m_instance = NULL;
 HBDeviceManager::Garbage HBDeviceManager::m_garbage;
 extern std::map<std::string, OCFDevice::Ptr> g_OCFDeviceList;
+extern std::vector<OCFDeviceTableInfo> g_ownedDeviceList;
 
 HBDeviceManager::HBDeviceManager()
 {
@@ -98,7 +101,7 @@ int HBDeviceManager::DiscoverDevices()
 int HBDeviceManager::GetAllDevices(std::map<std::string, OCFDevice::Ptr>& devices)
 {
     if (g_OCFDeviceList.size() == 0)
-        return -1;
+        return 0;
 
     devices = g_OCFDeviceList;
     return 0;
@@ -108,7 +111,7 @@ int HBDeviceManager::GetDeviceList(std::map<std::string, std::string>& deviceLis
 {
     std::map<std::string, OCFDevice::Ptr>::iterator it;
     if (g_OCFDeviceList.size() == 0)
-        return -1;
+        return 0;
 
     for (it = g_OCFDeviceList.begin(); it != g_OCFDeviceList.end(); it++) {
         OCFDevice::Ptr device = it->second;
@@ -116,6 +119,21 @@ int HBDeviceManager::GetDeviceList(std::map<std::string, std::string>& deviceLis
             continue;
 
         deviceList[it->first] = device->m_deviceType;
+    }
+    return 0;
+}
+
+int HBDeviceManager::GetOwnedDeviceList(std::map<std::string, std::string>& deviceList)
+{
+    if (g_ownedDeviceList.size() == 0)
+        return 0;
+
+    for (int i = 0; i < g_ownedDeviceList.size(); i++) {
+        OCFDeviceTableInfo info = g_ownedDeviceList[i];
+        if (info.nDeviceType.empty())
+            continue;
+
+        deviceList[info.nDeviceId] = info.nDeviceType;
     }
     return 0;
 }
@@ -254,6 +272,21 @@ int HBDeviceManager::EnableGatewayNet(std::string gatewayId)
     return -1;
 }
 
+int HBDeviceManager::RefreshOnlineStatus(std::string gatewayId)
+{
+    if (m_client != nullptr) {
+        OCFDevice::Ptr gateway = m_client->GetGatewayById(gatewayId);
+        if (gateway != nullptr) {
+            if (IPCA_OK == m_client->SetDeviceProperty(gateway->m_deviceId, "refresh_online", "1", true)) {
+                DM_LOGD("success. gatewayId: %s\n", gatewayId.c_str());
+                return 0;
+            }
+        }
+    }
+    DM_LOGD("failed. gatewayId: %s\n", gatewayId.c_str());
+    return -1;
+}
+
 int HBDeviceManager::DeleteDevice(std::string deviceId)
 {
     std::string gatewayId;
@@ -282,15 +315,16 @@ int HBDeviceManager::DeleteDevice(std::string deviceId)
     DM_LOGD("failed. deviceId: %s, gatewayId:%s\n", deviceId.c_str(), gatewayId.c_str());
     return -1;
 }
+
 int HBDeviceManager::GetDeviceOwnedStatus(
         std::string deviceId,
         HBDeviceOwnedStatus& ownedStatus)
 {
-    OCFDevice::Ptr device = GetDeviceById(deviceId);
-    if (device != nullptr) {
-        ownedStatus = static_cast<HBDeviceOwnedStatus>(device->m_ownedStatus);
-        DM_LOGD("deviceId: %s, ownedStatus: %d\n", deviceId.c_str(), ownedStatus);
-        return 0;
+    if (m_client != nullptr) {
+        OCFDeviceOwnedStatus ocfOwnedStatus;
+        IPCAStatus status = m_client->GetDeviceOwnedStatus(deviceId, ocfOwnedStatus);
+        ownedStatus = static_cast<HBDeviceOwnedStatus>(ocfOwnedStatus);
+        return (status == IPCA_OK) ? 0 : -1;
     }
     return -1;
 }
@@ -299,11 +333,9 @@ int HBDeviceManager::SetDeviceOwnedStatus(
         std::string deviceId,
         HBDeviceOwnedStatus ownedStatus)
 {
-    OCFDevice::Ptr device = GetDeviceById(deviceId);
-    if (device != nullptr) {
-        device->m_ownedStatus = static_cast<OCFDeviceOwnedStatus>(ownedStatus);
-        DM_LOGD("deviceId: %s, ownedStatus: %d\n", deviceId.c_str(), ownedStatus);
-        return 0;
+    if (m_client != nullptr) {
+        IPCAStatus status = m_client->SetDeviceOwnedStatus(deviceId, static_cast<OCFDeviceOwnedStatus>(ownedStatus));
+        return (status == IPCA_OK) ? 0 : -1;
     }
     return -1;
 }

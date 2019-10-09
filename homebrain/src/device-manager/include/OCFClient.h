@@ -27,7 +27,6 @@
 #include "ipca.h"
 #include "OCPlatform.h"
 #include "OCApi.h"
-
 #include "OCFDevice.h"
 
 using namespace OC;
@@ -101,6 +100,11 @@ public:
 
     // Delete device
     IPCAStatus DeleteDevice(std::string deviceId);
+
+    // set/get device owned status
+    IPCAStatus GetDeviceOwnedStatus(std::string deviceId, OCFDeviceOwnedStatus& ownedStatus);
+    IPCAStatus SetDeviceOwnedStatus(std::string deviceId, OCFDeviceOwnedStatus ownedStatus);
+
     // set/get callback handle, SetCallback should be invoked before init().
     void SetCallback(OCFDeviceCallBackHandler* callback);
     OCFDeviceCallBackHandler* GetCallback();

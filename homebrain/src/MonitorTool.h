@@ -47,6 +47,11 @@ private:
     static std::string _GetModulesName(const char *params);
     static std::string _StartUDPLog(const char *params);
     static std::string _StopUDPLog(const char *params);
+    static std::string _SetLogFileSize(const char *params);
+    static std::string _GetLogFileSize(const char *params);
+    static std::string _SetFtpLog(const char *params);
+    static std::string _GetFtpLogParams(const char *params);
+
     static std::string _GetDevices(const char *params);
     static std::string _GetSlots(const char *params);
     static std::string _GetInstaces(const char *params);

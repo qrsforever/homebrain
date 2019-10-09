@@ -15,8 +15,6 @@
 #include "RuleEngineTimer.h"
 #include "RuleEngineCore.h"
 #include "RuleEventHandler.h"
-#include "RuleEngineTable.h"
-#include "DeviceProfileTable.h"
 
 #include <map>
 #include <set>
@@ -36,10 +34,13 @@ public:
 
     void setServerRoot(std::string rootDir) { mServerRoot = rootDir; }
     std::string& getServerRoot() { return mServerRoot; }
-    int init(const std::vector<DeviceTableInfo> &devices, const std::vector<RuleTableInfo> &rules, bool urgent = false);
+
+    int init(const std::map<std::string, std::string> &devices,
+        const std::map<std::string, std::string> &rules, bool urgent = false);
 
     void setRuleChannel(std::shared_ptr<DataChannel> channel);
     void setDeviceChannel(std::shared_ptr<DataChannel> channel);
+    void setNotifyChannel(std::shared_ptr<DataChannel> channel);
 
     bool callMessagePush(int what, int arg1, std::string arg2, std::string message);
     bool callInstancePush(std::string insName, std::string slot, std::string value);
@@ -48,6 +49,8 @@ public:
     bool triggerRule(const std::string &ruleId, bool sync = false);
     bool enableRule(const std::string &ruleId, const std::string &script, bool sync = false);
     bool disableRule(const std::string &ruleId, bool sync = false);
+    bool assertRule(const std::string &assert, bool sync = false);
+    bool executeScene(const std::string &sceneName, const std::string &room, bool sync = false);
 
     std::vector<std::string> callGetFiles(int fileType, bool urgent);
 
@@ -87,6 +90,7 @@ private:
     RuleEngineTimer::pointer mTimer;
     DataChannel::pointer mRuleChannel;
     DataChannel::pointer mClassChannel;
+    DataChannel::pointer mNotifyChannel;
 
     bool mEnableRefreshRule;
     std::map<std::string, std::set<std::string>> mOfflineInsesCalled;

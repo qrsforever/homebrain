@@ -2,6 +2,8 @@
 # utils build script
 ##
 
+import os
+
 Import('env')
 
 utils_env = env.Clone()
@@ -14,6 +16,7 @@ utils_env.AppendUnique(CPPPATH = [
     'Log/src',
     'SQLite/src',
     '#/extlibs/sqlite3',
+    '#/extlibs/libcurl/include',
 ])
 
 utils_env.AppendUnique(RPATH = [utils_env.get('BUILD_DIR')])
@@ -22,13 +25,11 @@ utils_env.AppendUnique(CXXFLAGS = [
     '-std=c++0x',
     '-Wall',
     '-Wextra',
-    '-Werror',
+    # '-Werror',
 ])
 
 if not utils_env.get('RELEASE'):
     utils_env.AppendUnique(CPPDEFINES = ['DEBUG'])
-
-utils_env.AppendUnique(LIBS=['sqlite3']);
 
 if target_os == 'android':
     utils_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions'])
@@ -43,7 +44,8 @@ misc_src = [
     'Misc/src/StringData.cpp',
     'Misc/src/StringArray.cpp',
     'Misc/src/SysTime.cpp',
-    'Misc/src/Thread.cpp'
+    'Misc/src/Thread.cpp',
+    'Misc/src/CurlEasy.cpp',
     ]
 
 message_src = [
@@ -73,26 +75,29 @@ sqlite_src = [
 
 # misc
 misc_env = utils_env.Clone()
+# misc_env.AppendUnique(LIBS=['curl'])
 static_libutils_misc = misc_env.StaticLibrary('utils_misc', misc_src)
 misc_env.InstallTarget(static_libutils_misc , 'utils_misc')
 
 # message
 message_env = utils_env.Clone()
-message_env.AppendUnique(LIBS=['utils_misc'])
+# message_env.AppendUnique(LIBS=['utils_misc'])
 static_libutis_message = message_env.StaticLibrary('utils_message', message_src)
 message_env.InstallTarget(static_libutis_message , 'utils_message')
 
 # log
 log_env = utils_env.Clone()
-log_env.AppendUnique(LIBS=['utils_message', 'utils_misc'])
+# log_env.AppendUnique(LIBS=['utils_message', 'utils_misc'])
 static_libutils_log = log_env.StaticLibrary('utils_log', log_src)
 log_env.InstallTarget(static_libutils_log , 'utils_log')
 
 # sqlite
 sqlite_env = utils_env.Clone()
-sqlite_env.AppendUnique(LIBS=['utils_log', 'utils_message', 'utils_misc'])
-static_libutils_log = sqlite_env.StaticLibrary('utils_sqlite', sqlite_src)
-sqlite_env.InstallTarget(static_libutils_log , 'utils_sqlite')
+# sqlite_env.AppendUnique(LIBS=['utils_log', 'utils_message', 'utils_misc'])
+static_libutils_sqlite = sqlite_env.StaticLibrary('utils_sqlite', sqlite_src)
+sqlite_env.InstallTarget(static_libutils_sqlite , 'utils_sqlite')
+
+utils_env.AppendUnique(LIBS=['sqlite3', 'curl', 'mbedx509', 'mbedtls', 'mbedcrypto'])
 
 # utils.so
 shared_libutils = utils_env.SharedLibrary('HB_Utils', [misc_src, message_src, log_src, sqlite_src])

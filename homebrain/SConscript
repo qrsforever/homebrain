@@ -19,11 +19,7 @@ else:
 
 homebrain_env.AppendUnique(CXXFLAGS = [
     '-fpermissive',
-    '-Wno-error=unused-variable',
-    '-Wno-error=unused-parameter',
-    '-Wno-error=unused-result',
-    '-Wno-error=unused-but-set-variable',
-    '-Wno-error=narrowing',
+    '-Wno-error',
 ])
 
 if 'g++' in homebrain_env.get('CXX'):
@@ -44,6 +40,7 @@ homebrain_env.AppendUnique(CPPDEFINES = [
 ])
 
 homebrain_env.PrependUnique(CPPPATH = [
+    top_dir,
     '#/resource/include/',
     '#/resource/csdk/include',
     '#/resource/csdk/stack/include',
@@ -81,7 +78,5 @@ homebrain_env.PrependUnique(LIBS=[
 if target_arch in ['x86_64']:
     homebrain_env.AppendUnique(LIBS=['sqlite3'])
 
-SConscript('build/SConscript')
 SConscript('external/SConscript', 'homebrain_env')
 SConscript('src/SConscript', 'homebrain_env')
-SConscript('examples/SConscript', 'homebrain_env')

@@ -7,8 +7,7 @@
  ****************************************************************************/
 
 #include "RuleEngineTable.h"
-#include "Log.h"
-
+#include "SQLiteLog.h"
 #include "Common.h"
 
 using namespace UTILS;
@@ -53,7 +52,7 @@ RuleEngineTable::~RuleEngineTable()
 
 bool RuleEngineTable::updateOrInsert(const RuleTableInfo &info)
 {/*{{{*/
-    LOGD("update rule: %s\n", info.nRuleId.c_str());
+    SQL_LOGD("update rule: %s\n", info.nRuleId.c_str());
 
     Mutex::Autolock _l(&mMutex);
 
@@ -84,7 +83,7 @@ bool RuleEngineTable::updateOrInsert(const RuleTableInfo &info)
 
 bool RuleEngineTable::deleteBy(const RuleTableInfo &info, const std::string &where)
 {/*{{{*/
-    LOGD("delete rule\n");
+    SQL_LOGD("delete rule\n");
 
     Mutex::Autolock _l(&mMutex);
 
@@ -125,7 +124,7 @@ bool RuleEngineTable::deleteBy(const RuleTableInfo &info, const std::string &whe
 
 bool RuleEngineTable::queryBy(std::vector<RuleTableInfo> &infos, const RuleTableInfo &filter, const std::string &where)
 {/*{{{*/
-    LOGD("query\n");
+    SQL_LOGD("query\n");
 
     Mutex::Autolock _l(&mMutex);
 

@@ -1,8 +1,8 @@
 :root {
 
-    --font-family-default: 'ProximaNova-Regular',sans-serif;
-    --font-family-bold: 'ProximaNova-Bold',sans-serif;
-    --font-family-navigation: Arial,Helvetica,sans-serif;
+    --font-family-default: sans-serif;
+    --font-family-bold: sans-serif;
+    --font-family-navigation: Arial,sans-serif;
 
     --primary-text-color: #777777;
     --primary-text-color-disabled: #C6C6C6;
@@ -12,19 +12,19 @@
     --footer-text-left-color: #FFFFFF;
     --footer-text-right-color: #8b4f09;
 
-	--font-size-default: 18px;
-	--font-size-footer: 12px;
-	--font-size-navigation: 15px;
-	--font-size-dropdown-username: 14px;
-	--font-size-page-title: 20px;
-	--font-size-page-info-text: 16px;
-	--font-size-page-intro: 20px;
-	--font-size-page-intro-sub: 16px;
-	--font-size-combo: 18px;
-	--font-size-item-header: 18px;
+    --font-size-default: 18px;
+    --font-size-footer: 12px;
+    --font-size-navigation: 15px;
+    --font-size-dropdown-username: 14px;
+    --font-size-page-title: 20px;
+    --font-size-page-info-text: 16px;
+    --font-size-page-intro: 20px;
+    --font-size-page-intro-sub: 16px;
+    --font-size-combo: 18px;
+    --font-size-item-header: 18px;
 
-    --primary-color: #662C90;      /* Lynx purple */
-    --secondary-color: #F7931D;    /* Lynx orange */
+    --primary-color: #662C90;
+    --secondary-color: #F7931D;
 
     --user-dropbdown-background-color: #662C90;
     --user-dropdown-text-color: #FFFFFF;
@@ -71,15 +71,6 @@
 
 }
 
-@font-face{font-family:'ProximaNova-Regular';
-    src:url('./assets/ProximaNovaRegular.eot') format('embedded-opentype'),
-        url('./assets/ProximaNovaRegular.woff') format('woff'),
-        url('./assets/ProximaNovaRegular.ttf') format('truetype')}
-@font-face{font-family:'ProximaNova-Bold';
-    src:url('./assets/ProximaNovaBold.eot') format('embedded-opentype'),
-        url('./assets/ProximaNovaBold.woff') format('woff'),
-        url('./assets/ProximaNovaBold.ttf') format('truetype')}
-
 /* Basis page layout (header, footer and spaces around main area) */
 
 html {
@@ -110,7 +101,7 @@ body {
 }
 
 #header-logo {
-    width: 140x; 
+    width: 140x;
     height: 56px;
 }
 
@@ -187,7 +178,7 @@ li.nav-links, li.nav-links-active {
 li.nav-links a {
     display: block;
     padding: 8px;
-    text-decoration: none; 
+    text-decoration: none;
     color: var(--navigation-text-color);
     font-style:normal;
     font-family: var(--font-family-navigation);
@@ -210,7 +201,7 @@ li.nav-links a:hover{
 li.nav-links-active a{
     display: block;
     padding: 8px;
-    text-decoration: none; 
+    text-decoration: none;
     color:var(--navigation-text-focus-color);
     font-style:normal;
     font-family: var(--font-family-navigation);
@@ -225,7 +216,7 @@ li.nav-links-active a{
         overflow: hidden;
         max-height: 0;
         transition: max-height 0.5s ease-in-out;
-    } 
+    }
 
     li.nav-links, li.nav-links-active {
         display: inline-block;
@@ -246,8 +237,8 @@ li.nav-links-active a{
 /* currently does not work properly. To be compared with webUI v1 */
 
 @media(max-width:640px) {
-    /* Burger menu styles*/ 
-    .burger { 
+    /* Burger menu styles*/
+    .burger {
         display: inline-flex;
         display: -webkit-inline-flex;
         background: none;
@@ -263,7 +254,7 @@ li.nav-links-active a{
         color: var(--burger-color);
         margin: 0 auto;
         width: 45px;
-    } 
+    }
 
     .burger:hover{
         text-decoration:none;
@@ -300,7 +291,7 @@ li.nav-links-active a{
     .burger:hover i:before,
     .burger:hover i:after{
         background-color:var(--primary-color)
-    } 
+    }
 
     .burger-check {
         display: none;
@@ -547,8 +538,24 @@ img.page-intro-sub-item-icon {
     background-image: url(./assets/ic_activate.png);
 }
 
+.activate2-icon {
+    background-image: url(./assets/ic_activate2.png);
+}
+
 .trash-icon {
     background-image: url(./assets/ic_delete.png);
+}
+
+.reset-icon {
+    background-image: url(./assets/ic_reset.png);
+}
+
+.warning-icon {
+    background-image: url(./assets/warning.png);
+}
+
+.offline-icon {
+    background-image: url(./assets/offline.png);
 }
 
 .open-icon {
@@ -1049,7 +1056,7 @@ img.page-intro-sub-item-icon {
     font-size: 16px;
     text-align: center;
 }
- 
+
 .modal-rule-header {
     --modal-background-color2: #f5f5f5;
 }
@@ -1411,6 +1418,10 @@ img.page-intro-sub-item-icon {
 
 .net-icon {
     background-image: url(./assets/gateway_net.png);
+}
+
+.refresh-icon {
+    background-image: url(./assets/refresh.png);
 }
 
 .rule-condition-body {

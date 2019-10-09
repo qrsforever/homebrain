@@ -1,9 +1,10 @@
 {
     "devicetype": "oic.d.hue_color_light",
+    "supertype": "oic.d.light",
     "devicename": "飞利浦带饱和度灯",
     "manufacture": "Philips",
     "iconid": "ic_default_light",
-    "version": "0.9.2",
+    "version": "0.9.3",
     "profile": {
         "OnlineState": {
             "tag": "在线状态",
@@ -52,7 +53,7 @@
             "read": "T",
             "write": "T",
             "type": "int",
-            "range": "v >= 0 and v <= 360",
+            "range": "v >= 0 and v <= 254",
             "unit": ""
         }
     }

@@ -34,7 +34,7 @@ static void _login(const crow::request& req, crow::response& res)
     }
     Value& username = doc["user"];
     Value& password = doc["pwd"];
-    if (strcmp(username.GetString(), "lidong") ||
+    if (strcmp(username.GetString(), "1") ||
         strcmp(password.GetString(), "1")) {
         res.write("{\"token\":\"adbcd123456\", \"status\":-2}");
         res.end();

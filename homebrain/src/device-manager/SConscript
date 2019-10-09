@@ -8,13 +8,14 @@ Import('homebrain_env')
 DM_env = homebrain_env.Clone()
 
 DM_env.AppendUnique(CPPPATH = [
+        '#homebrain/src/storage-tables/src',
         'include',
         ])
 
 # TODO only for mstar938
 DM_env.AppendUnique(RPATH = [DM_env.get('BUILD_DIR')])
 
-DM_env.PrependUnique(LIBS = ['ipca'])
+DM_env.PrependUnique(LIBS = ['ipca', 'HB_StorageTable'])
 
 device_manager_src = [
     'src/OCFDevice.cpp',
@@ -29,16 +30,17 @@ DM_env.InstallTarget(DMlib, 'device_manager')
 DM_demo_env = homebrain_env.Clone()
 
 DM_demo_env.AppendUnique(CPPPATH = [
+        '#homebrain/src/storage-tables/src',
         'include',
         ])
 
 device_manager_demo_src = [
 #    'src/OCFDevice.cpp',
 #    'src/OCFClient.cpp',
-#    'src/HBDeviceManager.cpp',
+    '#homebrain/src/MainPublicHandler.cpp',
     'sample/demo.cpp'
     ]
 
-DM_demo_env.PrependUnique(LIBS = ['device_manager', 'HB_Utils'])
-DMDemo = DM_demo_env.Program('HBDeviceManagerDemo', device_manager_demo_src)
-DM_demo_env.InstallTarget(DMDemo, 'HBDeviceManagerDemo')
+DM_demo_env.PrependUnique(LIBS = ['device_manager', 'HB_Utils', 'HB_StorageTable'])
+#DMDemo = DM_demo_env.Program('HBDeviceManagerDemo', device_manager_demo_src)
+#DM_demo_env.InstallTarget(DMDemo, 'HBDeviceManagerDemo')

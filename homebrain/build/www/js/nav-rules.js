@@ -4,7 +4,7 @@
 /// @version 0.0.9
 /// @date 2019-01-30
 
-var Rules = function(ui, ds) {
+var Rules = function(ui, ds, testscenes) {
     this.ui = ui;
     this.d = ds;
     this.expandStates = [];
@@ -34,13 +34,14 @@ var Rules = function(ui, ds) {
         second: "{{time_second}}",
     }
     this.rules = [];
+    this.scenes = testscenes; //['none', 'comehome', 'leavehome', 'wakeup', 'gotosleep', 'reading', 'seemovie'];
     this.data = null;
     this.symbols = ["==", ">=", "<=", ">", "<", "!="];
     that_r = this;
 }
 
 Rules.prototype.initUI = function() {
-    console.log("Rules initUI");
+    // console.log("Rules initUI");
     that_r.rules = [];
     that_r.ui.showLoadingIndicator("RULES LOADING...");
     that_r.list(function(resData) {
@@ -90,7 +91,7 @@ Rules.prototype.initUI = function() {
                 }
                 html += '      <button';
                 html += '          class="default-icon-button list-icon-button activate-icon"';
-                html += '          onclick="onRuleExecute(\'' + rid + '\')"';
+                html += '          onclick="onRuleExecute(\'' + rid + '\', null)"';
                 html += '      ></button>';
             }
             html += '           <button';
@@ -168,16 +169,14 @@ Rules.prototype.toggleExpandBody = function(rid) {
 
 Rules.prototype.toggleSwitchBinary = function(rId, key) {
     if (hasClass(key, "switch-off-icon")) {
-        that_r.query(rId, function(resData){
-            that_r.data = resData;
-            that_r.data["trigger"]["switch"]["enabled"] = "on";
-            that_r.saveChanges();
+        that_r.enable(rId, "1", function(resData) {
+            addClass(key, "switch-on-icon");
+            removeClass(key, "switch-off-icon");
         });
     } else {
-        that_r.query(rId, function(resData){
-            that_r.data = resData;
-            that_r.data["trigger"]["switch"]["enabled"] = "off";
-            that_r.saveChanges();
+        that_r.enable(rId, "0", function(resData) {
+            addClass(key, "switch-off-icon");
+            removeClass(key, "switch-on-icon");
         });
     }
 }
@@ -193,21 +192,29 @@ Rules.prototype.displayErrorMessage = function (msg) {
 }
 
 Rules.prototype.getDeviceObj = function (did, propName) {
-    console.log("getDeviceObj %s %s %d", did, propName, that_r.currentModal);
+    // console.log("getDeviceObj %s %s %d", did, propName, that_r.currentModal);
     if (that_r.currentModal == that_r.editItem.CONDITIONS) {
         let devStatusObjs = that_r.data["conditions"]["deviceCondition"]["deviceStatus"];
         for (let i = 0, l = devStatusObjs.length; i < l; ++i) {
-            if (devStatusObjs[i]["deviceId"] == did &&
-                devStatusObjs[i]["propName"] == propName) {
-                return {'index': i, 'obj': devStatusObjs[i]};
+            if (devStatusObjs[i]["deviceId"] == did) {
+                if (propName) {
+                    if (devStatusObjs[i]["propName"] == propName)
+                        return {'index': i, 'obj': devStatusObjs[i]};
+                } else {
+                    return {'index': i, 'obj': devStatusObjs[i]};
+                }
             }
         }
     } else if (that_r.currentModal == that_r.editItem.ACTIONS) {
         let devControlObjs = that_r.data["actions"]["deviceControl"];
         for (let i = 0, l = devControlObjs.length; i < l; ++i) {
-            if (devControlObjs[i]["deviceId"] == did &&
-                devControlObjs[i]["propName"] == propName) {
-                return {'index': i, 'obj': devControlObjs[i]};
+            if (devControlObjs[i]["deviceId"] == did) {
+                if (propName) {
+                    if (devControlObjs[i]["propName"] == propName)
+                        return {'index': i, 'obj': devControlObjs[i]};
+                } else {
+                    return {'index': i, 'obj': devControlObjs[i]};
+                }
             }
         }
     }
@@ -236,6 +243,7 @@ Rules.prototype.onCreate = function() {
         },
         "conditions": {
             "conditionLogic": "and",
+            "sceneCondition": '',
             "timeCondition": [],
             "deviceCondition": {
                 "deviceLogic": "and",
@@ -249,6 +257,7 @@ Rules.prototype.onCreate = function() {
         "actions": {
             "deviceControl": [],
             "manualRuleId": [],
+            "execScene": "",
             "notify":{}
         }
     };
@@ -261,7 +270,7 @@ Rules.prototype.onEdit = function(idx) {
     var rule = that_r.rules[idx];
     if (rule.manualEnabled == "1" && rule.friends.length > 0) {
         var friends = rule.friends.split("|");
-        console.log(rule.friends);
+        // console.log(rule.friends);
         var html = "";
         html += '<h3 class="modal-title">';
         html +=      "{{rule_associated_title}}";
@@ -340,10 +349,10 @@ Rules.prototype.onEditModal = function(eId) {
         html += '<div style="margin-left:20%">';
         html += '    <label><span>or</span></label>';
         html += '    <input id="deviceConditionsOR" type="radio" name="conditionLogic" ' + (orLogic ? 'checked' : '');
-        html += '          class="scene-checkbox" onclick="onConditonLogic(\'conditionLogic\', \'or\');"/>';
+        html += '          class="scene-checkbox" onclick="onConditionLogic(\'conditionLogic\', \'or\');"/>';
         html += '    <label><span>and</span></label>';
         html += '    <input id="deviceConditionsAND" type="radio" name="conditionLogic" '+ (orLogic ? '' : 'checked');
-        html += '          class="scene-checkbox" onclick="onConditonLogic(\'conditionLogic\', \'and\');"/>';
+        html += '          class="scene-checkbox" onclick="onConditionLogic(\'conditionLogic\', \'and\');"/>';
         html += '</div>';
     }
     html += '</div>';
@@ -416,7 +425,7 @@ Rules.prototype.buildRuleList = function (eId) {
     var devs = that_r.d.devs
     var prfs = that_r.d.prfs;
 
-    function leftHtmlCallback(did, propName) {
+    function leftHtmlCallback(did, propName, propConf) {
         var result = that_r.getDeviceObj(did, propName);
         var html = "";
         html += '<input';
@@ -429,8 +438,8 @@ Rules.prototype.buildRuleList = function (eId) {
         return html;
     }
 
-    function rightHtmlCallback(did, propName, type) {
-        if  (type != "int")
+    function rightHtmlCallback(did, propName, propConf) {
+        if (propConf['type'] != "int")
             return "";
         var symbIdx = -1;
         var symbols = that_r.symbols;
@@ -485,10 +494,10 @@ Rules.prototype.buildRuleList = function (eId) {
     if (eId == that_r.editItem.CONDITIONS) {
         html += '        <label><span>or</span></label>';
         html += '        <input id="deviceConditionsOR" type="radio" name="deviceLogic" ' + (devOrLogic ? 'checked' : '');
-        html += '              class="scene-checkbox" onclick="onConditonLogic(\'deviceLogic\', \'or\');"/>';
+        html += '              class="scene-checkbox" onclick="onConditionLogic(\'deviceLogic\', \'or\');"/>';
         html += '        <label><span>and</span></label>';
         html += '        <input id="deviceConditionsAND" type="radio" name="deviceLogic" '+ (devOrLogic ? '' : 'checked');
-        html += '              class="scene-checkbox" onclick="onConditonLogic(\'deviceLogic\', \'and\');"/>';
+        html += '              class="scene-checkbox" onclick="onConditionLogic(\'deviceLogic\', \'and\');"/>';
     }
     html += '        </div>';
     html += '    </div>';
@@ -524,7 +533,7 @@ Rules.prototype.buildRuleList = function (eId) {
         html += '         />';
         html += '        <div class="device-selection-item-rest">';
         html += '            <span class="device-selection-item-name">';
-        html +=                  did + " " + devs[did].label;
+        html +=                  did + " " + devs[did].alias;
         html += '            </span>';
         html += '            <input id="ruleEntry" type="checkbox"';
         html +=                  checked ? "checked" : "";
@@ -541,30 +550,60 @@ Rules.prototype.buildRuleList = function (eId) {
     }
     html += '   </div>';
     html += '</div>';
-    if (eId == that_r.editItem.CONDITIONS) {
-        html += '<div id="environmentCondition" class="device-list-item ">';
-        html += '    <div class="device-list-item-header">';
-        html += '        <button id="environmentCondition_btn" ';
-        html += '              class="default-icon-button list-icon-button ' + that_r.getArrowClass("environmentCondition") + '"';
-        html += '              onclick="onToggleCondition(\'environmentCondition\');"></button>';
-        html += '        <div class="device-list-item-open device-list-item-header-rest">';
-        html += '            <div class="device-list-item-header-title">';
-        html += '                <label><span>{{env_condition}}</span></label>';
-        html += '            </div>';
-        html += '            <label><span>or</span></label>';
-        html += '            <input id="deviceConditionsOR" type="radio" name="envLogic" ' + (envOrLogic ? 'checked' : '');
-        html += '                  class="scene-checkbox" onclick="onConditonLogic(\'environmentLogic\', \'or\');"/>';
-        html += '            <label><span>and</span></label>';
-        html += '            <input id="deviceConditionsAND" type="radio" name="envLogic" '+ (envOrLogic ? '' : 'checked');
-        html += '                  class="scene-checkbox" onclick="onConditonLogic(\'environmentLogic\', \'and\');"/>';
-        html += '        </div>';
-        html += '    </div>';
-        html += '    <div id="" style="display:none"><center>Not implement yet</center></div>';
-        html += '    <div id="environmentCondition_body" style="display:' + (!that_r.expandArrows["environmentCondition"] ? "none" : "block") + '">';
-        html += '        <center>Not implement yet</center>';
-        html += '    </div>';
-        html += '</div>';
 
+    // sceneCondition and sceneAction
+    var sceneName = "";
+    var sceneTag = "";
+    if (eId == that_r.editItem.CONDITIONS) {
+        sceneName = that_r.data["conditions"]["sceneCondition"];
+        sceneTag = "sceneCondition";
+    } else {
+        sceneName = that_r.data["actions"]["execScene"];
+        sceneTag = "sceneAction";
+    }
+
+    html += '<div id="' + sceneTag + '" class="device-list-item ">';
+    html += '    <div class="device-list-item-header">';
+    html += '        <button id="' + sceneTag + '_btn" ';
+    html += '              class="default-icon-button list-icon-button ' + that_r.getArrowClass(sceneTag) + '"';
+    html += '              onclick="onToggleCondition(\'' + sceneTag + '\');"></button>';
+    html += '        <div class="device-list-item-open device-list-item-header-rest">';
+    html += '            <div class="device-list-item-header-title">';
+    html += '                <label><span>{{scene_action}}</span></label>';
+    html += '            </div>';
+    html += '        </div>';
+    html += '    </div>';
+    html += '    <div id="' + sceneTag + '_body" style="' + (!that_r.expandArrows[sceneTag] ? "display:none" : "display:block") + '">';
+    for (let i = 0; i < that_r.scenes.length; ++i) {
+        var scene = that_r.scenes[i]["sceneName"];
+        var icon = that_r.scenes[i]["icon"];
+        html += '    <div class="rule-device-selection-border rule-condition-body">';
+        html += '       <div class="device-list-item-resource">';
+        html += '          <div class="device-list-item-property">';
+        html += '              <div class="device-list-item-property-title">';
+        html += '                <img';
+        html += '                   id="' + rid + '_icon"';
+        html += '                   class="device-list-item-header-icon"';
+        html += '                   src="' + getIconUrl(icon) + '"';
+        html += '                   alt=""/>';
+        html += '              </div>';
+        html += '              <div class="device-list-item-property-title">';
+        html +=                   scene;
+        html += '              </div>';
+        html += '              <div class="device-list-item-property-value">';
+        html += '                  <input id="' + scene + '" name="scene" type="radio" ' + (scene == sceneName ? 'checked' : '');
+        html += '                    class="scene-checkbox" onclick="onSceneSelected(\'' + scene + '\');">';
+        html += '                  </input>';
+        html += '              </div>';
+        html += '          </div>';
+        html += '       </div>';
+        html += '    </div>';
+    }
+    html += '    </div>';
+    html += '</div>';
+
+    if (eId == that_r.editItem.CONDITIONS) {
+        // timeCondition
         html += '<div id="timeCondition" class="device-list-item ">';
         html += '    <div class="device-list-item-header">';
         html += '        <button id="timeCondition_btn" ';
@@ -606,7 +645,31 @@ Rules.prototype.buildRuleList = function (eId) {
         html += '        </div>';
         html += '    </div>';
         html += '</div>';
+
+        html += '<div id="environmentCondition" class="device-list-item ">';
+        html += '    <div class="device-list-item-header">';
+        html += '        <button id="environmentCondition_btn" ';
+        html += '              class="default-icon-button list-icon-button ' + that_r.getArrowClass("environmentCondition") + '"';
+        html += '              onclick="onToggleCondition(\'environmentCondition\');"></button>';
+        html += '        <div class="device-list-item-open device-list-item-header-rest">';
+        html += '            <div class="device-list-item-header-title">';
+        html += '                <label><span>{{env_condition}}</span></label>';
+        html += '            </div>';
+        html += '            <label><span>or</span></label>';
+        html += '            <input id="deviceConditionsOR" type="radio" name="envLogic" ' + (envOrLogic ? 'checked' : '');
+        html += '                  class="scene-checkbox" onclick="onConditionLogic(\'environmentLogic\', \'or\');"/>';
+        html += '            <label><span>and</span></label>';
+        html += '            <input id="deviceConditionsAND" type="radio" name="envLogic" '+ (envOrLogic ? '' : 'checked');
+        html += '                  class="scene-checkbox" onclick="onConditionLogic(\'environmentLogic\', \'and\');"/>';
+        html += '        </div>';
+        html += '    </div>';
+        html += '    <div id="" style="display:none"><center>Not implement yet</center></div>';
+        html += '    <div id="environmentCondition_body" style="display:' + (!that_r.expandArrows["environmentCondition"] ? "none" : "block") + '">';
+        html += '        <center>Not implement yet</center>';
+        html += '    </div>';
+        html += '</div>';
     } else if (eId == that_r.editItem.ACTIONS) {
+        // notify action
         html += '<div id="notify" class="device-list-item ">';
         html += '    <div class="device-list-item-header">';
         html += '        <button id="notify_btn" ';
@@ -623,6 +686,7 @@ Rules.prototype.buildRuleList = function (eId) {
         html += '    </div>';
         html += '</div>';
 
+        // manual action
         if (that_r.data["trigger"]["switch"]["manual"] != "on") {
             html += '<div id="manualRuleId" class="device-list-item ">';
             html += '    <div class="device-list-item-header">';
@@ -658,7 +722,7 @@ Rules.prototype.buildRuleList = function (eId) {
                 html += '                </span>';
                 html += '                <input id="manualRuleEntry" type="checkbox"';
                 html +=                      checked ? "checked" : "";
-                html += '                    onclick="onManualRuleSelected(\'' + rid + '\', this.checked)"';
+                html += '                    onclick="onManualRuleSelected(\'' + rid + '\',\'' + rname + '\', this.checked)"';
                 html += '                />';
                 html += '            </div>';
                 html += '        </label>';
@@ -699,20 +763,25 @@ Rules.prototype.buildRuleList = function (eId) {
 }
 
 Rules.prototype.deviceSelected = function (did, check) {
-    console.log("did = %s %d", did, check);
+    // console.log("did = %s %d", did, check);
     var key = "devbody_" + did;
     var elem = document.getElementById(key);
     if (elem)
         elem.style.display = check ? "block" : "none";
 
+    var result = null;
     if (that_r.currentModal == that_r.editItem.CONDITIONS) {
         var devStatusObjs = that_r.data["conditions"]["deviceCondition"]["deviceStatus"];
         if (check) {
             if (!devStatusObjs)
                 that_r.data["conditions"]["deviceCondition"]["deviceStatus"] = [];
         } else {
-            if (devStatusObjs)
-                that_r.data["conditions"]["deviceCondition"]["deviceStatus"] = [];
+            while (true) {
+                result = that_r.getDeviceObj(did, null);
+                if (!result)
+                    break;
+                devStatusObjs.splice(result['index'], 1);
+            }
         }
     } else if (that_r.currentModal == that_r.editItem.ACTIONS) {
         var devControlObjs = that_r.data["actions"]["deviceControl"];
@@ -720,14 +789,18 @@ Rules.prototype.deviceSelected = function (did, check) {
             if (!devControlObjs)
                 that_r.data["actions"]["deviceControl"] = [];
         } else {
-            if (devControlObjs)
-                that_r.data["actions"]["deviceControl"] = [];
+            while (true) {
+                result = that_r.getDeviceObj(did, null);
+                if (!result)
+                    break;
+                devControlObjs.splice(result['index'], 1);
+            }
         }
     }
 }
 
 Rules.prototype.propertySelected = function (did, propName, check) {
-    console.log("propertySelected(%s, %s, %d, %d)", did, propName, check, that_r.currentModal);
+    // console.log("propertySelected(%s, %s, %d, %d)", did, propName, check, that_r.currentModal);
     if (that_r.currentModal == that_r.editItem.CONDITIONS) {
         var elem = document.getElementById('symbolSelected_' + did + '_' + propName);
         if (elem)
@@ -758,7 +831,7 @@ Rules.prototype.propertySelected = function (did, propName, check) {
 }
 
 Rules.prototype.symbolSelected = function (did, propName, symbol) {
-    console.log("symbolSelected(%s, %s, %s)", did, propName, symbol);
+    // console.log("symbolSelected(%s, %s, %s)", did, propName, symbol);
     var result = that_r.getDeviceObj(did, propName);
     if (result) {
         var propValue = result["obj"]["propValue"];
@@ -768,6 +841,21 @@ Rules.prototype.symbolSelected = function (did, propName, symbol) {
                 break;
             }
         }
+    }
+}
+
+Rules.prototype.sceneSelected = function (scene) {
+    // console.log("sceneSelected: %s", scene);
+    if (that_r.currentModal == that_r.editItem.CONDITIONS) {
+        if (scene == "none")
+            that_r.data["conditions"]["sceneCondition"] = '';
+        else
+            that_r.data["conditions"]["sceneCondition"] = scene;
+    } else {
+        if (scene == "none")
+            that_r.data["actions"]["execScene"] = '';
+        else
+            that_r.data["actions"]["execScene"] = scene;
     }
 }
 
@@ -804,7 +892,7 @@ Rules.prototype.timeSetting = function(idx, what, value) {
 }
 
 Rules.prototype.changeProperty = function (did, propName, value) {
-    console.log("changeProperty(%s, %s, %d)", did, propName, value);
+    // console.log("changeProperty(%s, %s, %d)", did, propName, value);
     var result = that_r.getDeviceObj(did, propName);
     if (result) {
         value = value.toString();
@@ -826,7 +914,7 @@ Rules.prototype.changeProperty = function (did, propName, value) {
 }
 
 Rules.prototype.changeInfo = function (what, value) {
-    console.log("changeInfo(%d, %s)\n", what, value);
+    // console.log("changeInfo(%d, %s)\n", what, value);
     if (what == 1)
         that_r.data["sceneName"] = value.replace(/\"/g, "\\\"");
     else if (what == 2)
@@ -850,9 +938,11 @@ Rules.prototype.toggleEnable = function (key) {
 Rules.prototype.toggleCondition = function(divId) {
     switch(divId) {
         case 'deviceCondition':
+        case 'sceneCondition':
         case 'timeCondition':
         case 'environmentCondition':
         case 'notify':
+        case 'sceneAction':
         case 'manualRuleId':
             var btnId = divId + "_btn";
             var bodyElem = document.getElementById(divId + "_body");
@@ -947,6 +1037,7 @@ Rules.prototype.saveChanges = function () {
               && actions["deviceControl"].length) ||
           (actions["manualRuleId"]
               && actions["manualRuleId"].length) ||
+          (actions["execScene"]) ||
           (actions["notify"]
               && actions["notify"].length))) {
         that_r.displayErrorMessage("{{rule_errmsg_actions_not_set}}");
@@ -1010,7 +1101,7 @@ Rules.prototype.delete = function(rId, finishCallback) {
             console.log(error);
             return;
         }
-        console.log("request %s :%s", uri, responseText);
+        // console.log("request %s :%s", uri, responseText);
         try {
             var responseData = JSON.parse(responseText);
             if (responseData["status"] == global.RES_STATUS_OK) {
@@ -1130,9 +1221,9 @@ Rules.prototype.execute = function(rId, finishCallback) {
     });
 }
 
-Rules.prototype.switch = function(rId, enabled, finishCallback) {
-    var uri = "/api/familyscene/switch";
-    var body = '{"sceneId":"' + rId + '", ' + '"triggerEnabled":"' + enabled + '"}';
+Rules.prototype.enable = function(rId, enabled, finishCallback) {
+    var uri = "/api/familyscene/enable";
+    var body = '{"sceneId":"' + rId + '", ' + '"enable":"' + enabled + '"}';
     httpRequest("POST", uri, body, function(responseText, error) {
         if (error && error.status != 200) {
             console.log(error);

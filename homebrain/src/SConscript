@@ -7,14 +7,14 @@ import shutil
 
 Import('homebrain_env')
 
-SConscript('ipc-system/SConscript')
-SConscript('utils/SConscript')
+Depends(SConscript('utils/SConscript'), ['libcurl_export'])
 SConscript('storage-tables/SConscript', 'homebrain_env')
 SConscript('device-manager/SConscript', 'homebrain_env')
 SConscript('cloud-manager/SConscript', 'homebrain_env')
 SConscript('rule-engine/SConscript', 'homebrain_env')
 SConscript('http-handler/SConscript', 'homebrain_env')
 SConscript('gateway-agent/SConscript', 'homebrain_env')
+SConscript('ipc-system/SConscript')
 
 hb_env = homebrain_env.Clone()
 
@@ -25,6 +25,7 @@ hb_env.AppendUnique(RPATH = [hb_env.get('BUILD_DIR')])
 
 hb_env.AppendUnique(CPPPATH = [
     '.',
+    os.path.join(hb_env.get('BUILD_DIR'), 'include'),
     '#homebrain/external/clips/core',
     'utils/Log/src',
     'utils/Message/src',
@@ -73,17 +74,20 @@ hb_env.PrependUnique(LIBS=[
     'HB_GWAgent',
 ])
 
+hb_env.AppendUnique(CPPDEFINES = ['ENABLE_MONITOR_TOOL'])
+
 main_src = [
     'MainPublicHandler.cpp',
     'HBHelper.cpp',
+    'MonitorTool.cpp',
     'HomeBrainMain.cpp',
 ]
 
 if hb_env["PROJECT_PLATFORM"] in ['linux', 'mstart648']:
-    hb_env.AppendUnique(CPPDEFINES = ['ENABLE_MONITOR_TOOL'])
-    main_src.append('MonitorTool.cpp')
     main_src.append(os.path.join(cloud_sdk_dir, 'main.cpp'))
     main_src.append(os.path.join(cloud_sdk_dir, 'lecloud_interface.cpp'))
+
+# hb_env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME']=1
 
 homebrain = hb_env.Program('smarthb', main_src)
 hb_env.InstallTarget(homebrain , 'smarthb')

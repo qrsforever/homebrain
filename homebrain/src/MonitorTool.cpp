@@ -128,9 +128,9 @@ void MonitorTool::run()
     svr_addr.sin_addr.s_addr = INADDR_ANY;
     svr_addr.sin_port = htons(mServerPort);
 
-	if ((svr_sockfd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((svr_sockfd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
         LOGE("socket error port[%d]\n", mServerPort);
-		return;
+        return;
     }
     setsockopt(svr_sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     if (bind(svr_sockfd, (struct sockaddr *)&svr_addr, sizeof(struct sockaddr)) < 0) {
@@ -202,6 +202,10 @@ void MonitorTool::registCommands()
     _Insert("getModulesName",       &MonitorTool::_GetModulesName);
     _Insert("startUDPLog",          &MonitorTool::_StartUDPLog);
     _Insert("stopUDPLog",           &MonitorTool::_StopUDPLog);
+    _Insert("setLogFileSize",       &MonitorTool::_SetLogFileSize);
+    _Insert("getLogFileSize",       &MonitorTool::_GetLogFileSize);
+    _Insert("setFtpLog",            &MonitorTool::_SetFtpLog);
+    _Insert("getFtpLogParams",      &MonitorTool::_GetFtpLogParams);
     _Insert("getDevices",           &MonitorTool::_GetDevices);
     _Insert("getSlots",             &MonitorTool::_GetSlots);
     _Insert("getInstaces",          &MonitorTool::_GetInstaces);
@@ -263,7 +267,7 @@ std::string MonitorTool::_SetModuleLogLevel(const char *params)
         return "-1";
     }
     int l = atoi(ps[1].c_str());
-    if (ps[0] == "rule-engine") {
+    if (ps[0] == "rule-script") {
         ruleHandler().sendMessage(ruleHandler().obtainMessage(
                 RET_LOG_LEVEL, l, 0));
     }
@@ -317,6 +321,51 @@ std::string MonitorTool::_StopUDPLog(const char *params)
         gLogUDP = 0;
     }
     return "0";
+}/*}}}*/
+
+std::string MonitorTool::_SetLogFileSize(const char *params)
+{/*{{{*/
+    if (!params)
+        return "-1";
+    SmartHomeInfo info;
+    info.nName.assign(LOG_FILESIZE_FIELD);
+    info.nValue.assign(params);
+    mainDB().updateOrInsert(info);
+    return "0";
+}/*}}}*/
+
+std::string MonitorTool::_GetLogFileSize(const char *params)
+{/*{{{*/
+    (void)params;
+    std::vector<SmartHomeInfo> infos;
+    mainDB().queryBy(infos, LOG_FILESIZE_FIELD);
+    if (infos.size() != 1)
+        return "-1";
+    return infos[0].nValue;
+}/*}}}*/
+
+std::string MonitorTool::_SetFtpLog(const char *params)
+{/*{{{*/
+    std::vector<std::string> ps = stringSplit(params, TOCKEN);
+    if (ps.size() != 3) {
+        mainDB().deleteBy(SmartHomeInfo(LOG_FTP_FIELD));
+        return "0";
+    }
+    SmartHomeInfo info;
+    info.nName.assign(LOG_FTP_FIELD);
+    info.nValue.assign(params);
+    mainDB().updateOrInsert(info);
+    return "0";
+}/*}}}*/
+
+std::string MonitorTool::_GetFtpLogParams(const char *params)
+{/*{{{*/
+    (void)params;
+    std::vector<SmartHomeInfo> infos;
+    mainDB().queryBy(infos, LOG_FTP_FIELD);
+    if (infos.size() != 1)
+        return "-1";
+    return infos[0].nValue;
 }/*}}}*/
 
 std::string MonitorTool::_GetDevices(const char *params)

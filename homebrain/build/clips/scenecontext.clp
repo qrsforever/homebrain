@@ -1,6 +1,7 @@
 ;=================================================================
 ; date: 2018-08-13 21:33:39
 ; title: scenecontext
+; author: QRS
 ;=================================================================
 
 ; Scene Context
@@ -11,6 +12,7 @@
     (slot follow (type SYMBOL) (default none))
     (slot action (type SYMBOL) (allowed-symbols enter story exit none) (default none))
     (multislot services (type SYMBOL))
+    (multislot zombies  (type SYMBOL))
 )
 
 ; micro service
@@ -47,6 +49,8 @@
     (dynamic-put target ?target)
     (dynamic-put follow none)
     (dynamic-put action enter)
+    (dynamic-put services (create$ ))
+    (dynamic-put zombies  (create$ ))
     (return TRUE)
 )
 
@@ -73,7 +77,15 @@
         (if (neq ?idx FALSE)
          then
             (dynamic-put services (delete$ ?svs ?idx ?idx))
+            (logd "services: " (dynamic-get services))
         )
+    )
+    (bind ?zmbs (dynamic-get zombies))
+    (bind ?idx (member$ ?name ?zmbs))
+    (if (eq ?idx FALSE)
+     then
+        (dynamic-put zombies (insert$ ?zmbs 1 ?name))
+        (logd "zombies: " (dynamic-get zombies))
     )
     (return TRUE)
 )
@@ -106,6 +118,7 @@
     (if (neq ?follow none)
      then
         (send ?sct switch-scene-enter ?where ?follow)
+        (act-notify "n-103" ?follow ?where)
     )
 )
 
@@ -123,21 +136,11 @@
   =>
     (retract ?f)
     (logd "start-service: " ?name ", master: " ?master)
-    (bind ?pos (str-index : ?name))
-    (if (and (neq ?pos FALSE) (> ?pos 1))
-     then
-        (bind ?nn (string-to-field (sub-string 1 (- ?pos 1) ?name)))
-        (bind ?ss (string-to-field (sub-string (+ ?pos 1) (str-length ?name) ?name)))
-     else
-        (bind ?nn ?name)
-        (bind ?ss none)
-    )
-    (bind ?s (nth$ 1 (find-fact ((?ms service))
-                            (and (eq ?ms:name ?nn)(eq ?ms:skey ?ss)))))
+    (bind ?s (nth$ 1 (find-fact ((?ms service)) (eq ?ms:name ?name))))
     (if (eq ?s nil)
      then
         (logd "new service: " ?name)
-        (assert (service (master ?master) (name ?nn) (skey ?ss) (state start) (args $?args)))
+        (assert (service (master ?master) (name ?name) (skey ?name) (state start) (args $?args)))
      else
         (bind ?curr (fact-slot-value ?s state))
         (if (eq ?curr stop)
@@ -163,17 +166,7 @@
   =>
     (retract ?f)
     (logd "stop-service: " ?name)
-    (bind ?pos (str-index : ?name))
-    (if (and (neq ?pos FALSE) (> ?pos 1))
-     then
-        (bind ?nn (string-to-field (sub-string 1 (- ?pos 1) ?name)))
-        (bind ?ss (string-to-field (sub-string (+ ?pos 1) (str-length ?name) ?name)))
-     else
-        (bind ?nn ?name)
-        (bind ?ss none)
-    )
-    (bind ?s (nth$ 1 (find-fact ((?ms service))
-                            (and (eq ?ms:name ?nn)(eq ?ms:skey ?ss)))))
+    (bind ?s (nth$ 1 (find-fact ((?ms service)) (eq ?ms:name ?name))))
     (if (eq ?s nil)
      then
         (return)
@@ -190,17 +183,12 @@
 
 (defrule _rul-service-state-stop
     (declare (salience ?*SALIENCE-LOWEST*))
-    ?f <- (service (state stop) (master ?master) (name ?name) (skey ?key))
+    ?f <- (service (state stop) (master ?master) (name ?name) (skey ?key &:(eq ?key ?name)))
   =>
     (retract ?f)
     (logi "retract service: " ?name ":" ?key ", master: " ?master)
     (if (instancep ?master)
      then
-        (if (neq ?key none)
-         then
-            (send ?master del-service (sym-cat ?name : ?key))
-         else
-            (send ?master del-service ?name)
-        )
+        (send ?master del-service ?name)
     )
 )

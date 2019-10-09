@@ -10,6 +10,7 @@
 #define __LogFile_H__
 
 #include "LogFilter.h"
+#include "MessageHandler.h"
 
 #include <stdio.h>
 
@@ -19,11 +20,15 @@ namespace UTILS {
 
 class LogFile : public LogFilter {
 public:
-    LogFile();
+    LogFile(MessageHandler *handler = 0, const char* path = 0, size_t logMaxSize = 10240000);
     virtual ~LogFile();
     virtual bool pushBlock(uint8_t* blockHead, uint32_t blockLength);
 private:
+    MessageHandler *mH;
     FILE *mFp;
+    size_t mSumSize;
+    size_t mMaxSize;
+    char mPath[128];
 }; /* class LogFile */
 
 } /* namespace UTILS */

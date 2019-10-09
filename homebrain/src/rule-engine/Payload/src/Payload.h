@@ -13,6 +13,15 @@
 
 #include <string>
 
+#define ACT_NOTIFY_FUNC  "act-notify"
+#define ACT_SCENE_FUNC   "act-rule"
+#define ACT_CONTROL_FUNC "act-control"
+
+#define ACT_ASSERT_FUNC  "assert"
+
+#define RULE_ID_PREFIX "rul-"
+
+
 #ifdef __cplusplus
 
 namespace HB {
@@ -22,6 +31,8 @@ typedef enum {
     PT_RULE_PAYLOAD,
     PT_CLASS_PAYLOAD,
     PT_TIMER_PAYLOAD,
+    PT_SCENE_PAYLOAD,
+    PT_NOTIFY_PAYLOAD,
 } PayloadType;
 
 class Payload : public ::UTILS::Object {

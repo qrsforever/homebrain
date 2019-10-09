@@ -57,6 +57,9 @@ UI.prototype.displayNav = function(navId, leaveCallback) {
         case global.NAV_RULES:
             this.displayDiv(global.DIV_RULES);
             break;
+        case global.NAV_SCENES:
+            this.displayDiv(global.DIV_SCENES);
+            break;
         default:
             ;
     }
@@ -178,81 +181,6 @@ UI.prototype.setButtonClickable = function (id, value) {
         else
             obj.disabled = true;
     }
-}
-
-UI.prototype.handleEscAndEnterOnKeyEvent = function(inputElement, event) {
-    if (event.key === "Escape" || event.key === "Cancel") {
-        event.stopPropagation();
-        event.preventDefault();
-        inputElement.value = inputElement.defaultValue;
-        inputElement.blur();
-    }
-    if (event.key === "Enter" || event.key === "Accept") {
-        event.stopPropagation();
-        event.preventDefault();
-        inputElement.blur();
-    }
-}
-
-UI.prototype.buildInlineTextEdit = function (id, name, jsCode) {
-    var html = "";
-    html += '<label id="' + id + '" class="inline-edit" onclick="ui.onInlineTextEditClicked(\'' + id + '\')">';
-    html += '    <span></span>';
-    html += '    <input';
-    html += '        style="display:none;"';
-    html += '        onkeydown="ui.handleEscAndEnterOnKeyEvent(this, event)"';
-    html += '        onblur="onInlineTextEditBlur(\'' + id + '\')"';
-    html += '        data-oncommit="' + jsCode + '"';
-    html += '    />';
-    html += '</label>';
-    return html;
-}
-
-UI.prototype.updateInlineTextEdit = function (id, value) {
-    var element = document.getElementById(id);
-    if (element) {
-        var spanElements = element.getElementsByTagName("span");
-        if (spanElements && spanElements.length > 0) {
-            spanElements[0].textContent = value;
-        }
-    }
-}
-
-UI.prototype.onInlineTextEditClicked = function (id) {
-    var element = document.getElementById(id);
-    if (element) {
-        var spanElements = element.getElementsByTagName("span");
-        var inputElements = element.getElementsByTagName("input");
-        if (spanElements && spanElements.length > 0
-                && inputElements && inputElements.length > 0
-                && inputElements[0] !== document.activeElement) {
-            inputElements[0].defaultValue = spanElements[0].textContent;
-            inputElements[0].value = inputElements[0].defaultValue;
-            inputElements[0].style.display = "";
-            spanElements[0].style.display = "none";
-        }
-    }
-}
-
-UI.prototype.onInlineTextEditBlur = function (id) {
-    var element = document.getElementById(id);
-    if (element) {
-        var spanElements = element.getElementsByTagName("span");
-        var inputElements = element.getElementsByTagName("input");
-        if (spanElements && spanElements.length > 0
-                && inputElements && inputElements.length > 0) {
-            if (inputElements[0].value !== inputElements[0].defaultValue) {
-                spanElements[0].textContent = inputElements[0].value;
-                evalCallbackCodeOfInlineEdit.call(inputElements[0], inputElements[0].value);
-            }
-            inputElements[0].style.display = "none";
-            spanElements[0].style.display = "";
-        }
-    }
-}
-
-UI.prototype.evalCallbackCodeOfInlineEdit = function (value) {
-    eval(this.getAttribute("data-oncommit"));
 }
 
 UI.prototype.notImplAlert = function (str) {

@@ -1,0 +1,61 @@
+##
+# kk_sdk build script
+##
+
+import os
+Import('env')
+
+target_os = env.get('TARGET_OS')
+
+lite_env = env.Clone()
+
+platform = os.environ.get("PROJECT_PLATFORM")
+
+if platform not in ["kk", "mstart648"]:
+    Return('lite_env')
+
+if target_os == 'android':
+    lite_env.InstallTarget('lib/libHJ_KKSDK_O.so', 'libHJ_KKSDK_O')
+    lite_env.PrependUnique(LIBS = ['HJ_KKSDK_O'])
+    lite_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions', '-std=c++0x'])
+    lite_env.AppendUnique(LIBS = ['gnustl_shared'])
+
+if target_os == 'linux':
+    target_arch = env.get('TARGET_ARCH')
+    if target_arch in ['x86']:
+        # not bit64 library
+        lite_env.InstallTarget('lib/libX86_SDK.so', 'libX86_SDK')
+        lite_env.PrependUnique(LIBS = ['X86_SDK'])
+        lite_env.AppendUnique(LIBS = ['gcov'])
+        lite_env.AppendUnique(CXXFLAGS = ['--coverage'])
+        lite_env.AppendUnique(CXXFLAGS = ['-Wall', '-std=c++0x'])
+    elif target_arch in ['x86_64']:
+        Return('lite_env')
+    elif target_arch in ['arm64']:
+        lite_env.InstallTarget('lib/libHJ_KKSDK_Arm_64_Linux.so', 'libHJ_KKSDK_Arm_64_Linux')
+        lite_env.PrependUnique(LIBS = ['HJ_KKSDK_Arm_64_Linux'])
+
+############## Using Iotivity constrained #################
+lite_env.AppendUnique(RPATH = [lite_env.get('BUILD_DIR')])
+lite_env.PrependUnique(LIBS = ['iotivity-constrained-server'])
+lite_env.AppendUnique(CPPPATH = [
+        '#/homebrain/external/iotivity-constrained',
+        '#/homebrain/external/iotivity-constrained/include',
+        '#/homebrain/external/iotivity-constrained/port/linux',
+        'include',
+        ])
+
+lite_env.AppendUnique(CXXFLAGS=['-DOC_SERVER'])
+
+if not lite_env.get('RELEASE'):
+    lite_env.AppendUnique(LIBS = ['log'])
+
+lite_bridge_src = [
+    'lite/KonkeManager.cpp',
+    'lite/KonkeDevice.cpp',
+    'lite/KonkeDemo.cpp',
+    'lite/KonkeAndroidLog.cpp',
+    ]
+
+kk_bridge = lite_env.Program('kk_bridge', lite_bridge_src)
+lite_env.InstallTarget(kk_bridge, 'kk_bridge')

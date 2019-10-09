@@ -11,7 +11,9 @@
 
 #include "RefCnt.h"
 
+#ifndef PLATFORM_LARFE
 #define USE_SHARED_PTR
+#endif
 
 #ifdef __cplusplus
 

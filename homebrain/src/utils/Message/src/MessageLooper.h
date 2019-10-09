@@ -32,7 +32,7 @@ private:
 }; /* class MessageLooper */
 
 namespace Looper {
-MessageLooper& getDefaultLooper();
+MessageLooper& getMainLooper();
 }
 
 } /* namespace UTILS */

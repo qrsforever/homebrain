@@ -7,8 +7,8 @@
  ****************************************************************************/
 
 #include "TimerEventTable.h"
-#include "Common.h"
 #include "SQLiteLog.h"
+#include "Common.h"
 
 #define TIMER_EVENT_TABLE_NAME "timerevent"
 

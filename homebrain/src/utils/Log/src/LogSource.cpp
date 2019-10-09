@@ -80,6 +80,7 @@ void LogSource::logVerbose(const char *file, int line, const char *function, int
     else
         dataSize += writeLen;
 
+    /* blocksize(4) datasize(4) */
     *((int *)(bufPointer + 4)) = dataSize - 8;
     blockSize = (dataSize + 8 + 3) & 0xfffffffc;
     if ((bufLength - blockSize) > MAX_BLOCK_SIZE) {

@@ -29,6 +29,9 @@ namespace HB {
 
 OCFDevice::OCFDevice(IPCAAppHandle appHandle, std::string id, std::string interId) :
     m_deviceId(id),
+    m_deviceType(""),
+    m_deviceName(""),
+    m_manufacture(""),
     m_deviceHandle(nullptr),
     m_observeHandle(nullptr),
     m_ownedStatus(UNBINDED), m_online(-1),
@@ -188,6 +191,11 @@ ResourceList OCFDevice::GetResourceInfo()
                     m_deviceType = DEVICE_TYPE::KK_SCENECTRL;
                     resourceTypeList.push_back(RESOURCE_TYPE::SCENE_STATUS);
                     break;
+                } else if (0 == DEVICE_TYPE::KK_SCENECTRL1.compare(resourceType)) {
+                    DM_LOGD("a Scence Board 1 device is found.\n");
+                    m_deviceType = DEVICE_TYPE::KK_SCENECTRL1;
+                    resourceTypeList.push_back(RESOURCE_TYPE::SCENE_STATUS);
+                    break;
                 } else if (0 == DEVICE_TYPE::KK_LIGHTCTRL.compare(resourceType)) {
                     DM_LOGD("a 3-lights Board device is found.\n");
                     m_deviceType = DEVICE_TYPE::KK_LIGHTCTRL;
@@ -205,6 +213,22 @@ ResourceList OCFDevice::GetResourceInfo()
                     resourceTypeList.push_back(RESOURCE_TYPE::HUMIDITY);
                     resourceTypeList.push_back(RESOURCE_TYPE::ILLUMINANCE);
                     break;
+                } else if (0 == DEVICE_TYPE::KK_CURTAINCTRL.compare(resourceType)) {
+                    LOGD("a curtain panel device is found.\n");
+                    m_deviceType = DEVICE_TYPE::KK_CURTAINCTRL;
+                    resourceTypeList.push_back(RESOURCE_TYPE::CURTAIN_STATUS);
+                } else if (0 == DEVICE_TYPE::KK_CURTAINMOTOR.compare(resourceType)) {
+                    LOGD("a curtain motor device is found.\n");
+                    m_deviceType = DEVICE_TYPE::KK_CURTAINMOTOR;
+                    resourceTypeList.push_back(RESOURCE_TYPE::CURTAIN_STATUS);
+                } else if (0 == DEVICE_TYPE::KK_BOOLSENSOR.compare(resourceType)) {
+                    LOGD("a bool sensor device is found.\n");
+                    m_deviceType = DEVICE_TYPE::KK_BOOLSENSOR;
+                    resourceTypeList.push_back(RESOURCE_TYPE::BOOL_SENSOR);
+                } else if (0 == DEVICE_TYPE::KK_ALARMER.compare(resourceType)) {
+                    LOGD("a kk alarmer device is found.\n");
+                    m_deviceType = DEVICE_TYPE::KK_ALARMER;
+                    resourceTypeList.push_back(RESOURCE_TYPE::ALARMER);
                 } else if (0 == DEVICE_TYPE::HUE_BRI_LIGHT.compare(resourceType)) {
                     DM_LOGD("a Hue Light device is found.\n");
                     m_deviceType = DEVICE_TYPE::HUE_BRI_LIGHT;

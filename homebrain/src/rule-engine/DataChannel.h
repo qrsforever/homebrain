@@ -14,6 +14,12 @@
 #include <string>
 #include <memory>
 
+// Don't change me
+
+#define NOID_RULE_ENABLE   "n-101"
+#define NOID_RULE_DISABLE  "n-102"
+#define NOID_SCENE_MODE    "n-103"
+
 #ifdef __cplusplus
 
 namespace HB {

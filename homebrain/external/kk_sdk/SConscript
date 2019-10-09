@@ -1,0 +1,46 @@
+##
+# kk_sdk build script
+##
+
+Import('env')
+
+sdk_env = env.Clone()
+
+target_os = sdk_env.get('TARGET_OS')
+
+sdk_env.AppendUnique(CPPPATH = [
+        '#/extlibs/rapidjson/rapidjson/include/rapidjson/',
+        '#/extlibs/rapidjson/rapidjson/include/rapidjson/error',
+        '#/extlibs/rapidjson/rapidjson/include/rapidjson/internal',
+        'include',
+        'wrapper',
+        ])
+
+# TODO only for mstar938
+sdk_env.AppendUnique(RPATH = [sdk_env.get('BUILD_DIR')])
+sdk_env.PrependUnique(LIBS = ['HJ_KKSDK'])
+
+if target_os == 'android':
+    sdk_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions', '-std=c++0x'])
+
+    if not sdk_env.get('RELEASE'):
+        sdk_env.AppendUnique(LIBS = ['log'])
+
+
+    example_src = [
+        'wrapper/Controller.cpp',
+        'wrapper/Device.cpp',
+        'wrapper/SosPanel.cpp',
+        'wrapper/SmartSocket.cpp',
+        'wrapper/CurtainPanel.cpp',
+        'wrapper/Switch.cpp',
+        'wrapper/DoorSensor.cpp',
+        'wrapper/TemperatureSensor.cpp',
+        'wrapper/HumiditySensor.cpp',
+        'wrapper/Illuminometer.cpp',
+        'wrapper/demo/demo1.cpp',
+        ]
+
+    sdk_env.InstallTarget('lib/libHJ_KKSDK.so', 'libHJ_KKSDK')
+
+    sdk_env.Program('HJ_KKSdkDdemo', example_src)

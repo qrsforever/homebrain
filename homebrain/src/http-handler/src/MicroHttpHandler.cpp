@@ -16,6 +16,7 @@ extern void initAuthenticationAPI(APP&);
 extern void initGatewaysAPI(APP&);
 extern void initDevicesAPI(APP&);
 extern void initRulesAPI(APP&);
+extern void initScenesAPI(APP&);
 
 MicroHttpHandler::MicroHttpHandler()
     : Thread()
@@ -42,6 +43,7 @@ void MicroHttpHandler::run()
     initGatewaysAPI(app);
     initDevicesAPI(app);
     initRulesAPI(app);
+    initScenesAPI(app);
     initEngineAPI(app);
 
     MicroLogHandler *logger = new MicroLogHandler();

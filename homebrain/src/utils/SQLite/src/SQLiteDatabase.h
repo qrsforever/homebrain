@@ -14,6 +14,7 @@
 #include <map>
 #include "SQLiteResultSet.h"
 #include "SQLiteValue.h"
+#include "Mutex.h"
 
 #ifdef __cplusplus
 
@@ -69,6 +70,7 @@ public:
     std::vector<SQLiteResultSet*> mOpenReusltSets; /* put query result set here when calling query() */
     std::map<std::string, SQLiteResultSet*> mCacheResultSets;
     SQLiteResultSet mReusedResultSet;
+    Mutex mMutex;
 }; /* class SQLiteDatabase */
 
 } /* namespace  UTILS */

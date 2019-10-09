@@ -6,7 +6,9 @@
  *  Copyright QRS
  ****************************************************************************/
 
-#include "Log.h"
+#include "GatewayAgentLog.h"
+
+#ifndef GA_EXPORT_SDK
 
 int gGatewayAgentModuleLevel = LOG_LEVEL_DEBUG;
 
@@ -15,4 +17,6 @@ namespace HB {
 static LogModule GatewayAgentModule("gateway-agent", gGatewayAgentModuleLevel);
 
 } /* namespace HB */
+
+#endif
 

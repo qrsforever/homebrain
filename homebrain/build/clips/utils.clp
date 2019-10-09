@@ -1,6 +1,7 @@
 ;=================================================================
 ; date: 2018-06-14 18:55:54
 ; title: utils
+; author: QRS
 ;=================================================================
 
 ;-----------------------------------------------------------------
@@ -202,11 +203,7 @@
 (deffunction act-control (?id ?slot ?value $?args)
     (if (instance-existp ?id)
      then
-        (bind ?curval (send (symbol-to-instance-name ?id) getData ?slot))
-        (if (<> ?curval ?value)
-         then
-            (ins-push ?id ?slot (number-to-string ?value))
-        )
+        (ins-push ?id ?slot (number-to-string ?value))
      else
         (logw "NOT FOUND: " ?id " instance")
         (msg-push ?*MSG-RULE-RHS* ?*RHS-INS-NOT-FOUND* "nil" (format nil "%s" ?id))
@@ -218,8 +215,9 @@
      then
         (txt-push ?id ?title ?content)
      else
-        (logw "Parameters is invalid: (" ?id ", " ?title ", " ?content ")")
-        (msg-push ?*MSG-RULE-RHS* ?*RHS-INS-NOT-FOUND* "nil" (format nil "%s" ?id))
+        (bind ?t (str-cat "" ?title))
+        (bind ?c (str-cat "" ?content))
+        (txt-push ?id ?t ?c)
     )
 )
 

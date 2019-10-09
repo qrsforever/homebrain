@@ -9,23 +9,29 @@
 #ifndef __MessageTypes_H__
 #define __MessageTypes_H__
 
+#include "MessageHandler.h"
+
 enum MessageTypes {
-    MT_SYSTEM = 1,      /* system message */
-    MT_TIMER,           /* timer message */
-    MT_NETWORK,         /* network message */
-    MT_DEVICE,          /* devices message */
-    MT_RULE,            /* rule engine message */
-    MT_DB, 
-    MT_MONITOR = 99,    /* debug monitor tool */
-    MT_SIMULATE = 100,  /* only for simulate */
+    MT_SYSTEM = MT_LOG + 1, /* system message */
+    MT_TIMER,               /* timer message */
+    MT_NETWORK,             /* network message */
+    MT_DEVICE,              /* devices message */
+    MT_RULE,                /* rule engine message */
+    MT_DB,                  /* database message */
+    MT_GA,                  /* gateway agent message */
+    MT_MONITOR = 99,        /* debug monitor tool */
+    MT_SIMULATE = 100,      /* only for simulate */
+    MT_EXTERNAL = 500,      /* for external module using */
 };
 
 /******************
  *  System Event  *
  ******************/
-#define SYSTEM_EVENT_START   1   /* system start event */
-#define SYSTEM_EVENT_RESTART 2   /* system restart event */
-#define SYSTEM_EVENT_READY   3   /* system ready event */
+#define SYSTEM_EVENT_START    1   /* system start event */
+#define SYSTEM_EVENT_RESTART  2   /* system restart event */
+#define SYSTEM_EVENT_READY    3   /* system ready event */
+#define SYSTME_EVENT_RECOVERY 4   /* system recovery event */
+#define SYSTME_EVENT_REBOOT   5   /* system reboot event */
 
 #define SYSTEM_START_SUCCESS   1    /* system sub event: start ok */
 #define SYSTEM_START_ERROR    -1    /* system sub event: start error */
@@ -69,7 +75,15 @@ enum MessageTypes {
 #define DEVICE_PROPERTY_REPORT  1   /* device sub event: report property */
 #define DEVICE_PROPERTY_CONTROL 2   /* device sub event: control property */
 
-#define DB_CLOSE        1
+#define DB_CLOSE              1
+#define DB_TABLE_UPDATE       2
+#define DB_TABLE_DELETE       3
+
+/*******************
+ *  GA Event  *
+ *******************/
+#define MQTT_CONNECT_SUCCESS 1
+#define MQTT_CONNECT_FAIL    2
 
 /*******************
  *  Monitor Event  *

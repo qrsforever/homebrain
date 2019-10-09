@@ -19,9 +19,10 @@ namespace HB {
 
 struct DeviceTableInfo {
     DeviceTableInfo()
-        : nDeviceType(""), nDeviceVer(""), nDeviceManu("")
-        , nScriptData(""), nJsonData("") { }
+        : nDeviceType(""), nSuperType(""), nDeviceVer("")
+        , nDeviceManu(""), nScriptData(""), nJsonData("") { }
     std::string nDeviceType;
+    std::string nSuperType;
     std::string nDeviceName;
     std::string nDeviceVer;
     std::string nDeviceManu;

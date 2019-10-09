@@ -1,0 +1,83 @@
+##
+# larfe build script
+##
+
+import os
+Import('env')
+
+build_dir = env.get('BUILD_DIR')
+top_dir = env.get('SRC_DIR')
+
+env.AppendUnique(CPPDEFINES = ['PLATFORM_LARFE'])
+
+Depends(SConscript(build_dir + 'homebrain/src/utils/SConscript'), ['testtest', 'libcurl_export'])
+Depends(SConscript(build_dir + 'homebrain/src/gateway-agent/SConscript'), ['MQTTPacketClient'])
+
+larfe_env = env.Clone()
+
+target_os = larfe_env.get('TARGET_OS')
+
+enable_unittest = False
+
+if os.path.exists(os.path.join(top_dir, 'build_info.h')):
+    larfe_env.AppendUnique(CPPDEFINES = ['HAVE_BUILD_INFO'])
+
+# larfe_env.AppendUnique(CPPDEFINES = ['ENABLE_MONITOR_TOOL', 'EMQ_TEST'])
+larfe_env.AppendUnique(CPPDEFINES = ['ENABLE_MONITOR_TOOL'])
+
+larfe_env.AppendUnique(CPPPATH = [
+    top_dir,
+    os.path.join(build_dir, 'include'),
+    '.',
+    '#/extlibs/rapidjson/rapidjson/include',
+    '#homebrain/src',
+    '#homebrain/src/utils/Log/src',
+    '#homebrain/src/utils/Message/src',
+    '#homebrain/src/utils/Misc/src',
+    '#homebrain/src/utils/SQLite/src',
+    '#homebrain/src/gateway-agent/src',
+    'larfe_client',
+])
+
+larfe_env.PrependUnique(LIBS=[
+    'gateway_agent',
+    'MQTTPacketClient',
+    'utils_log', 'utils_message', 'utils_misc', 'utils_sqlite',
+    'curl', 'sqlite3',
+    'mbedx509', 'mbedtls', 'mbedcrypto',
+    'rt',
+])
+
+larfe_env.AppendUnique(LINKFLAGS = [
+])
+
+larfe_env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME']=1
+
+larfe_ga_src = [
+    'LFMain.cpp',
+    'LFHelper.cpp',
+    'MainHandler.cpp',
+    'LFDatabase.cpp',
+    'DBTables.cpp',
+    'LFMonitorTool.cpp',
+    'larfe_client/LarfeDevice.cpp',
+    'larfe_client/LarfeClient.cpp',
+    'larfe_client/LarfeClientLog.cpp',
+    'ota/ota.cpp',
+    'log/log.cpp',
+]
+
+if enable_unittest:
+    larfe_env.AppendUnique(CPPDEFINES = ['LFGA_UNITTEST'])
+    larfe_ga_src.append('LFUnitTest.cpp')
+
+larfega = larfe_env.Program('larfe_ga', larfe_ga_src)
+
+lf_demo_env = larfe_env.Clone()
+larfe_client_sample = lf_demo_env.Program('larfe_demo', [
+    'larfe_client/LarfeDevice.cpp',
+    'larfe_client/LarfeClient.cpp',
+    'larfe_client/LarfeClientLog.cpp',
+    'larfe_client/client.cpp',
+])
+lf_demo_env.InstallTarget(larfe_client_sample, 'larfe_demo')

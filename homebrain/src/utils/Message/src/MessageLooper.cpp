@@ -14,17 +14,17 @@ namespace UTILS {
 
 namespace Looper {
 
-static MessageLooper *gDefaultLooper = 0;
+static MessageLooper *gMainLooper = 0;
 
-MessageLooper& getDefaultLooper()
+MessageLooper& getMainLooper()
 {
-    /* TODO */
-    if (!gDefaultLooper) {
-        gDefaultLooper = new MessageLooper(pthread_self());
-        gDefaultLooper->start();
-        /* gDefaultLooper->run(); */
+    /* TODO the first call in main thread, eg. MainHandler */
+    if (!gMainLooper) {
+        gMainLooper = new MessageLooper(pthread_self());
+        gMainLooper->start();
+        /* gMainLooper->run(); */
     }
-    return *gDefaultLooper;
+    return *gMainLooper;
 }
 
 } /* namespace Looper */

@@ -1,0 +1,46 @@
+#0  0x0000007fb78199e8 in __GI_raise (sig=sig@entry=6) at ../nptl/sysdeps/unix/sysv/linux/raise.c:56
+#1  0x0000007fb781acf0 in __GI_abort () at abort.c:89
+#2  0x0000007fb78556bc in __libc_message (do_abort=1, fmt=fmt@entry=0x7fb79030b8 "*** Error in `%s': %s: 0x%s ***\n") at ../sysdeps/posix/libc_fatal.c:175
+#3  0x0000007fb785b2e0 in malloc_printerr (action=1, str=0x7fb79035f0 "malloc(): smallbin double linked list corrupted", ptr=<optimized out>) at malloc.c:4996
+#4  0x0000007fb785d244 in _int_malloc (av=av@entry=0x7fa4000020, bytes=bytes@entry=52) at malloc.c:3359
+#5  0x0000007fb785ec88 in __GI___libc_malloc (bytes=52) at malloc.c:2891
+#6  0x0000007fb7c972d8 in operator new(unsigned long) () from /home/hj/libHB_Utils.so
+#7  0x0000007fb7c9a2ac in std::string::_Rep::_S_create(unsigned long, unsigned long, std::allocator<char> const&) () from /home/hj/libHB_Utils.so
+#8  0x0000007fb7c9b100 in std::string::_Rep::_M_clone(std::allocator<char> const&, unsigned long) () from /home/hj/libHB_Utils.so
+#9  0x0000007fb7c9b1c4 in std::string::reserve(unsigned long) () from /home/hj/libHB_Utils.so
+#10 0x0000007fb7c9b4a8 in std::string::append(char const*, unsigned long) [clone .part.19] () from /home/hj/libHB_Utils.so
+#11 0x0000007fb7c9b610 in std::string::append(char const*) () from /home/hj/libHB_Utils.so
+#12 0x000000000048da34 in HB::_listall(crow::request const&, crow::response&) ()
+#13 0x0000000000473c48 in std::_Function_handler<void (crow::request const&, crow::response&), void (*)(crow::request const&, crow::response&)>::_M_invoke(std::_Any_data const&, crow::request const&, crow::response&) ()
+#14 0x0000000000474090 in crow::TaggedRule<>::handle(crow::request const&, crow::response&, crow::routing_params const&) ()
+#15 0x0000000000461e7c in crow::Router::handle(crow::request const&, crow::response&) ()
+#16 0x000000000046eaa4 in crow::Connection<crow::SocketAdaptor, crow::Crow<HB::MicroMiddleware>, HB::MicroMiddleware>::handle() ()
+#17 0x000000000046f458 in crow::HTTPParser<crow::Connection<crow::SocketAdaptor, crow::Crow<HB::MicroMiddleware>, HB::MicroMiddleware> >::on_message_complete(http_parser*) ()
+#18 0x00000000004424f8 in http_parser_execute ()
+#19 0x000000000046048c in crow::HTTPParser<crow::Connection<crow::SocketAdaptor, crow::Crow<HB::MicroMiddleware>, HB::MicroMiddleware> >::feed(char const*, int) ()
+#20 0x000000000046707c in crow::Connection<crow::SocketAdaptor, crow::Crow<HB::MicroMiddleware>, HB::MicroMiddleware>::do_read()::{lambda(boost::system::error_code const&, unsigned long)#1}::operator()(boost::system::error_code const&, unsigned long) const ()
+#21 0x0000000000467464 in boost::asio::detail::reactive_socket_recv_op<boost::asio::mutable_buffers_1, crow::Connection<crow::SocketAdaptor, crow::Crow<HB::MicroMiddleware>, HB::MicroMiddleware>::do_read()::{lambda(boost::system::error_code const&, unsigned long)#1}>::do_complete(boost::asio::detail::task_io_service*, boost::asio::detail::task_io_service_operation*, boost::system::error_code const&, unsigned long) ()
+#22 0x00000000004434e8 in boost::asio::detail::task_io_service_operation::complete(boost::asio::detail::task_io_service&, boost::system::error_code const&, unsigned long) ()
+#23 0x000000000044bd48 in boost::asio::detail::epoll_reactor::descriptor_state::do_complete(boost::asio::detail::task_io_service*, boost::asio::detail::task_io_service_operation*, boost::sys---Type <return> to continue, or q <return> to quit---  
+tem::error_code const&, unsigned long) ()
+#24 0x00000000004434e8 in boost::asio::detail::task_io_service_operation::complete(boost::asio::detail::task_io_service&, boost::system::error_code const&, unsigned long) ()
+#25 0x0000000000446f8c in boost::asio::detail::task_io_service::do_run_one(boost::asio::detail::scoped_lock<boost::asio::detail::posix_mutex>&, boost::asio::detail::task_io_service_thread_info&, boost::system::error_code const&) ()
+#26 0x0000000000453aa0 in boost::asio::detail::task_io_service::run(boost::system::error_code&) ()
+#27 0x000000000043cebc in boost::asio::io_service::run() [clone .isra.161] ()
+#28 0x0000000000463610 in crow::Server<crow::Crow<HB::MicroMiddleware>, crow::SocketAdaptor, HB::MicroMiddleware>::run()::{lambda()#1}::operator()() const ()
+#29 0x00000000004639c0 in std::_Function_handler<void (), std::reference_wrapper<std::_Bind_simple<crow::Server<crow::Crow<HB::MicroMiddleware>, crow::SocketAdaptor, HB::MicroMiddleware>::run()::{lambda()#1} ()> > >::_M_invoke(std::_Any_data const&) ()
+#30 0x0000000000449a60 in std::function<void ()>::operator()() const ()
+#31 0x000000000046fadc in std::__future_base::_Task_setter<std::unique_ptr<std::__future_base::_Result<void>, std::__future_base::_Result_base::_Deleter>, void>::operator()() ()
+#32 0x000000000046fc28 in std::_Function_handler<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> (), std::__future_base::_Task_setter<std::unique_ptr<std::__future_base::_Result<void>, std::__future_base::_Result_base::_Deleter>, void> >::_M_invoke(std::_Any_data const&) ()
+#33 0x000000000044a7b8 in std::__future_base::_State_baseV2::_M_do_set(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>&, bool&) ()
+#34 0x000000000043e910 in void std::__once_call_impl<std::_Bind_simple<std::_Mem_fn<void (std::__future_base::_State_baseV2::*)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>&, bool&)> (std::__future_base::_State_baseV2*, std::reference_wrapper<std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()> >, std::reference_wrapper<bool>)> >() ()
+#35 0x0000007fb7b339fc in __GI___pthread_once (once_control=0x7fa0013124, init_routine=0x49d008 <__once_proxy>) at ../ports/sysdeps/unix/sysv/linux/aarch64/nptl/pthread_once.c:77
+#36 0x000000000043c550 in __gthread_once(int*, void (*)()) [clone .constprop.724] ()
+#37 0x00000000004451fc in std::__future_base::_State_baseV2::_M_set_result(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>, bool) ()
+#38 0x000000000046f8b4 in std::__future_base::_Async_state_impl<std::_Bind_simple<crow::Server<crow::Crow<HB::MicroMiddleware>, crow::SocketAdaptor, HB::MicroMiddleware>::run()::{lambda()#1} ()>, void>::_Async_state_impl(crow::Server<crow::Crow<HB::MicroMiddleware>, crow::SocketAdaptor, HB::MicroMiddleware>::run()::{lambda()#1} (&&)())::{lambda()#1}::operator()() const ()
+#39 0x000000000046fa8c in std::thread::_Impl<std::_Bind_simple<std::__future_base::_Async_state_impl<std::_Bind_simple<crow::Server<crow::Crow<HB::MicroMiddleware>, crow::SocketAdaptor, HB::MicroMiddleware>::run()::{lambda()#1} ()>, void>::_Async_state_impl(crow::Server<crow::Crow<HB::MicroMiddleware>, crow::SocketAdaptor, HB::MicroMiddleware>::run()::{lambda()#1} (&&)())::{lambda()#1} ()> >::_M_run() ()
+#40 0x0000007fb7a5c460 in execute_native_thread_routine () from /home/hj/libdevice_manager.so
+---Type <return> to continue, or q <return> to quit---
+#41 0x0000007fb7b2de34 in start_thread (arg=0x7fb4cc41c0) at pthread_create.c:311
+#42 0x0000007fb78b14f0 in clone () at ../ports/sysdeps/unix/sysv/linux/aarch64/nptl/../clone.S:96
+

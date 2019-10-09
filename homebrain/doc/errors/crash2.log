@@ -1,0 +1,16 @@
+#0  _int_malloc (av=av@entry=0x7f98000020, bytes=bytes@entry=16) at malloc.c:3563
+#1  0x0000007fb785ec88 in __GI___libc_malloc (bytes=16) at malloc.c:2891
+#2  0x0000007fb7c972d8 in operator new(unsigned long) () from /home/hj/libHB_Utils.so
+#3  0x0000007fb7acbd7c in void std::vector<std::shared_ptr<CallbackInfo>, std::allocator<std::shared_ptr<CallbackInfo> > >::_M_emplace_back_aux<std::shared_ptr<CallbackInfo> const&>(std::shared_ptr<CallbackInfo> const&) () from /home/hj/root/usr/lib/libipca.so
+#4  0x0000007fb7ac9dc4 in Callback::GetCallbackInfoList(CallbackType, std::vector<std::shared_ptr<CallbackInfo>, std::allocator<std::shared_ptr<CallbackInfo> > >&) ()
+   from /home/hj/root/usr/lib/libipca.so
+#5  0x0000007fb7acae20 in Callback::DeviceDiscoveryCallback(bool, bool, InternalDeviceInfo const&, std::vector<std::string, std::allocator<std::string> > const&) ()
+   from /home/hj/root/usr/lib/libipca.so
+#6  0x0000007fb7ad055c in OCFFramework::OnResourceFound(std::shared_ptr<OC::OCResource>) () from /home/hj/root/usr/lib/libipca.so
+#7  0x0000007fb7ad23f0 in std::_Function_handler<void (std::shared_ptr<OC::OCResource>), std::_Bind<std::_Mem_fn<void (OCFFramework::*)(std::shared_ptr<OC::OCResource>)> (OCFFramework*, std::_Placeholder<1>)> >::_M_invoke(std::_Any_data const&, std::shared_ptr<OC::OCResource>) () from /home/hj/root/usr/lib/libipca.so
+#8  0x0000007fb77b92e8 in std::thread::_Impl<std::_Bind_simple<std::function<void (std::shared_ptr<OC::OCResource>)> (std::shared_ptr<OC::OCResource>)> >::_M_run() ()
+   from /home/hj/root/usr/lib/liboc.so
+#9  0x0000007fb7a5c460 in execute_native_thread_routine () from /home/hj/libdevice_manager.so
+#10 0x0000007fb7b2de34 in start_thread (arg=0x7ef67ff1c0) at pthread_create.c:311
+#11 0x0000007fb78b14f0 in clone () at ../ports/sysdeps/unix/sysv/linux/aarch64/nptl/../clone.S:96
+(gdb) 

@@ -30,13 +30,13 @@ public:
 
     virtual bool onDataArrive();
     virtual bool onError();
-	virtual bool onEnd();
+    virtual bool onEnd();
 
 protected:
     enum MessageCode {
-    	MC_DataArrive,
-    	MC_End,
-    	MC_Error
+        MC_DataArrive,
+        MC_End,
+        MC_Error
     };
     virtual void handleMessage(Message* msg);
 

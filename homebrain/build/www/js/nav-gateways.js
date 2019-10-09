@@ -11,13 +11,14 @@ var Gateways = function(ui) {
         "hue": {"icon": "bridge_hue", "label":"{{bridge_hue}}"},
     };
     this.expandStates = [];
-    this.checkStatusCount = 5;
+    this.checkStatusCount = 30;
     this.checkIntervalTimer = null;
+    this.gateways = {};
     that_g = this;
 }
 
 Gateways.prototype.initUI = function() {
-    console.log("Gateways initUI");
+    // console.log("Gateways initUI");
     that_g.ui.showLoadingIndicator("GATEWAYS LOADING...");
 
     that_g.list(function(resData) {
@@ -35,6 +36,7 @@ Gateways.prototype.initUI = function() {
             var type = resData[i]["gatewayType"];
             var owned = resData[i]["ownedStatus"];
             var key = resData[i]["accessKey"];
+            var enable = resData[i]["enable"];
 
             html += '<div';
             html += '    id="' +  gatewayId + '"';
@@ -43,7 +45,7 @@ Gateways.prototype.initUI = function() {
             html += '        <button';
             html += '            id="' + gatewayId + '_iconbutton"';
             html += '            class="iconselection-button"';
-            html += '            onclick="onRuleModify(' + i + ')";>';
+            html += '            onclick="onEditGateway(\'' + type + '\', \'' + gatewayId + '\')";>';
             html += '            <img';
             html += '                id="' + gatewayId + '_icon"';
             html += '                class="device-list-item-header-icon"';
@@ -54,6 +56,15 @@ Gateways.prototype.initUI = function() {
             html += '            <div class="device-list-item-header-title">';
             html += '                <label id="' + gatewayId + '"> <span>' + gatewayId + '</span></label>';
             html += '            </div>';
+            html += '            <button';
+            html += '                class="default-icon-button list-icon-button refresh-icon"';
+            html += '                onclick="onRefreshBridgeSubDevices(\'' + gatewayId + '\')"';
+            html += '            ></button>';
+            html += '           <button';
+            html += '               id="' + 'toggleSwitch' + gatewayId + '"';
+            html += '               class="default-icon-button list-icon-button ' + (enable == "1" ? "switch-on-icon" : "switch-off-icon") + '"';
+            html += '               onclick="onToggleBridgeSwitch(\'' + gatewayId + '\')"';
+            html += '           ></button>';
             html += '            <button';
             html += '                class="default-icon-button list-icon-button net-icon"';
             html += '                onclick="onGatewayNet(\'' + gatewayId + '\')"';
@@ -94,6 +105,7 @@ Gateways.prototype.initUI = function() {
             html += '        </div>';
             html += '    </div>';
             html += '</div>';
+            that_g.gateways[gatewayId] = resData[i];
         }
         body.innerHTML = html;
         intro.style.display = "none";
@@ -154,12 +166,19 @@ Gateways.prototype.onSelect = function() {
    that_g.ui.openModal(html);
 }
 
-Gateways.prototype.onAdd = function(type) {
+Gateways.prototype.onAddOrEdit = function(type, gwId) {
     var html = "";
-    html += '<h3 class="modal-title">';
-    html +=      "{{gateway_add_title}}";
-    html += '</h3>';
-    html += '<p class="modal-info-text">' + "{{gateway_add}}: " + type + '</p>';
+    if (gwId) {
+        html += '<h3 class="modal-title">';
+        html +=      "{{gateway_edit_title}}";
+        html += '</h3>';
+        html += '<p class="modal-info-text">' + "{{gateway_edit}}: " + type + '</p>';
+    } else {
+        html += '<h3 class="modal-title">';
+        html +=      "{{gateway_add_title}}";
+        html += '</h3>';
+        html += '<p class="modal-info-text">' + "{{gateway_add}}: " + type + '</p>';
+    }
 
     html += '<div id="gateway-onbind-modal" class="form-container" style="display:block">'
 
@@ -168,11 +187,15 @@ Gateways.prototype.onAdd = function(type) {
             html += '<div class="device-list-item-property">';
             html += '    <input id = "gateway-id"';
             html += '         onchange="onChangeGatewayInfo();"';
+            if (gwId)
+                html += '     value="' + gwId + '"';
             html += '         type="text" placeholder="{{id}}" class="rule-input">';
             html += '</div>';
             html += '<div class="device-list-item-property">';
             html += '    <input id = "access-key"';
             html += '         onchange="onChangeGatewayInfo();"';
+            if (gwId)
+                html += '     value="' + that_g.gateways[gwId]['accessKey'] + '"';
             html += '         type="text" placeholder="{{gateway_access_key}}" class="rule-input">';
             html += '</div>';
             break;
@@ -180,16 +203,22 @@ Gateways.prototype.onAdd = function(type) {
             html += '<div class="device-list-item-property">';
             html += '    <input id = "gateway-id"';
             html += '         onchange="onChangeGatewayInfo();"';
+            if (gwId)
+                html += '     value="' + gwId + '"';
             html += '         type="text" placeholder="{{id}}" class="rule-input">';
             html += '</div>';
             html += '<div class="device-list-item-property">';
             html += '    <input id = "gateway-username"';
             html += '         onchange="onChangeGatewayInfo();"';
+            if (gwId)
+                html += '     value="' + that_g.gateways[gwId]['accessKey'] + '"';
             html += '         type="text" placeholder="{{gateway_username}}" class="rule-input">';
             html += '</div>';
             html += '<div class="device-list-item-property">';
             html += '    <input id = "gateway-ip"';
             html += '         onchange="onChangeGatewayInfo();"';
+            if (gwId)
+                html += '     value="' + that_g.gateways[gwId]['gatewayIp'] + '"';
             html += '         type="text" placeholder="{{gateway_ip}}" class="rule-input">';
             html += '</div>';
             break;
@@ -288,7 +317,7 @@ Gateways.prototype.onDelete = function (bridgeId) {
 }
 
 Gateways.prototype.onNet = function(bridgeId) {
-    console.log(bridgeId);
+    // console.log(bridgeId);
     var html = "";
     html += '<h3 class="modal-title">';
     html +=      "{{gateway_check_net}}";
@@ -312,6 +341,25 @@ Gateways.prototype.onNet = function(bridgeId) {
     });
 }
 
+Gateways.prototype.toggleSwitchBinary = function(bridgeId) {
+    var key = 'toggleSwitch' + bridgeId;
+    if (hasClass(key, "switch-off-icon")) {
+        addClass(key, "switch-on-icon");
+        removeClass(key, "switch-off-icon");
+        that_g.enable(bridgeId, "1");
+    } else {
+        addClass(key, "switch-off-icon");
+        removeClass(key, "switch-on-icon");
+        that_g.enable(bridgeId, "0");
+    }
+}
+
+Gateways.prototype.onRefresh = function(bridgeId) {
+    that_g.refresh(bridgeId, function(resData){
+
+    });
+}
+
 Gateways.prototype.add = function(body, finishCallback) {
     var uri = "/api/gateway/add";
     httpRequest("POST", uri, body, function(responseText, error) {
@@ -319,7 +367,7 @@ Gateways.prototype.add = function(body, finishCallback) {
             console.log(error);
             return;
         }
-        console.log("request %s :%s", uri, responseText);
+        // console.log("request %s :%s", uri, responseText);
         try {
             var responseData = JSON.parse(responseText);
             if (responseData["status"] == global.RES_STATUS_OK) {
@@ -338,13 +386,13 @@ Gateways.prototype.add = function(body, finishCallback) {
 
 Gateways.prototype.status = function(id, finishCallback) {
     var uri = "/api/gateway/status";
-    var body = '{"gatewayId":"' + id + '"}';
+    var body = '{"gjtewayId":"' + id + '"}';
     httpRequest("POST", uri, body, function(responseText, error) {
         if (error && error.status != 200) {
             console.log(error);
             return;
         }
-        console.log("request %s :%s", uri, responseText);
+        // console.log("request %s :%s", uri, responseText);
         try {
             var responseData = JSON.parse(responseText);
             if (responseData["status"] == global.RES_STATUS_OK) {
@@ -369,7 +417,7 @@ Gateways.prototype.remove = function(id, finishCallback) {
             console.log(error);
             return;
         }
-        console.log("request %s :%s", uri, responseText);
+        // console.log("request %s :%s", uri, responseText);
         try {
             var responseData = JSON.parse(responseText);
             if (responseData["status"] == global.RES_STATUS_OK) {
@@ -393,7 +441,7 @@ Gateways.prototype.list = function(finishCallback) {
             console.log(error);
             return;
         }
-        console.log("request %s :%s", uri, responseText);
+        // console.log("request %s :%s", uri, responseText);
         try {
             var responseData = JSON.parse(responseText);
             if (responseData["status"] == global.RES_STATUS_OK) {
@@ -418,7 +466,7 @@ Gateways.prototype.net = function(id, finishCallback) {
             console.log(error);
             return;
         }
-        console.log("request %s :%s", uri, responseText);
+        // console.log("request %s :%s", uri, responseText);
         try {
             var responseData = JSON.parse(responseText);
             if (responseData["status"] == global.RES_STATUS_OK) {
@@ -426,6 +474,50 @@ Gateways.prototype.net = function(id, finishCallback) {
                     finishCallback(responseData["result"]);
                 return;
             }
+            that_r.ui.buildGenericErrorModal(
+                    responseData["errors"]["code"],
+                    responseData["errors"]["message"]);
+        } catch (err) {
+            console.log(err);
+        }
+    });
+}
+
+Gateways.prototype.enable = function(id, enable) {
+    var uri = "/api/gateway/enable";
+    var body = '{"gatewayId":"' + id + '", "enable":"' + enable + '"}';
+    httpRequest("POST", uri, body, function(responseText, error) {
+        if (error && error.status != 200) {
+            console.log(error);
+            return;
+        }
+        // console.log("request %s :%s", uri, responseText);
+        try {
+            var responseData = JSON.parse(responseText);
+            if (responseData["status"] == global.RES_STATUS_OK)
+                return;
+            that_r.ui.buildGenericErrorModal(
+                    responseData["errors"]["code"],
+                    responseData["errors"]["message"]);
+        } catch (err) {
+            console.log(err);
+        }
+    });
+}
+
+Gateways.prototype.refresh = function(id) {
+    var uri = "/api/gateway/refresh";
+    var body = '{"gatewayId":"' + id + '"}';
+    httpRequest("POST", uri, body, function(responseText, error) {
+        if (error && error.status != 200) {
+            console.log(error);
+            return;
+        }
+        // console.log("request %s :%s", uri, responseText);
+        try {
+            var responseData = JSON.parse(responseText);
+            if (responseData["status"] == global.RES_STATUS_OK)
+                return;
             that_r.ui.buildGenericErrorModal(
                     responseData["errors"]["code"],
                     responseData["errors"]["message"]);

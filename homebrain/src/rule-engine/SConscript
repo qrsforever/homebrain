@@ -24,7 +24,6 @@ rule_engine_env.AppendUnique(CPPPATH = [
 rule_engine_env.AppendUnique(LIBS=[
     'clips',
     'device_manager',
-    'hbstoragetable',
 ])
 
 rule_engine_env.AppendUnique(RPATH = [rule_engine_env.get('BUILD_DIR')])
@@ -56,8 +55,11 @@ ruledriver_src = [
     'Payload/src/ClassPayload.cpp',
     'Payload/src/InstancePayload.cpp',
     'Payload/src/RulePayload.cpp',
+    'Payload/src/ScenePayload.cpp',
+    'Payload/src/NotifyPayload.cpp',
     'DataChannel.cpp',
     'DeviceDataChannel.cpp',
+    'NotifyDataChannel.cpp',
     'CloudDataChannel.cpp',
     'RuleEngineLog.cpp',
 ]

@@ -29,15 +29,12 @@ protected:
     void doNetworkSuccess();
 
 private:
+    void onLogEvent(Message *msg);
     void onNetworkEvent(Message *msg);
     void onDeviceEvent(Message *msg);
 #ifdef ENABLE_MONITOR_TOOL
     void onMonitorEvent(Message *msg);
 #endif
-#ifdef SIM_SUITE
-    void oonSimulateEvent(Message *msg);
-#endif
-
 }; /* class MainPublicHandler */
 
 MainPublicHandler& mainHandler();

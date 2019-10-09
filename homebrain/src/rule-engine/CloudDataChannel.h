@@ -11,6 +11,7 @@
 
 #include "DataChannel.h"
 #include "RulePayload.h"
+#include "ScenePayload.h"
 #include "ClassPayload.h"
 #include "rapidjson/document.h"
 
@@ -63,6 +64,11 @@ public:
     static bool parseConditions(rapidjson::Value &conditions, std::shared_ptr<RulePayload> payload);
     static bool parseActions(rapidjson::Value &actions, std::shared_ptr<RulePayload> payload);
     static bool parseTimeString(const char *timestr, SlotPoint &slotpoint);
+
+    static bool parseScene(rapidjson::Value &rule, std::shared_ptr<ScenePayload> payload);
+    static bool parseDeviceControl(rapidjson::Value &controls, ms_on_event_t event, std::shared_ptr<ScenePayload> payload);
+    static bool parseNotifyContent(rapidjson::Value &contents, ms_on_event_t event, std::shared_ptr<ScenePayload> payload);
+    static bool parseMicroService(rapidjson::Value &services, ms_on_event_t event, std::shared_ptr<ScenePayload> payload);
 
 #ifdef USE_TIMER_EVENT
     static bool parseTimeString(const char *timestr, TimeNode &node);

@@ -14,6 +14,10 @@ strings = {
             'en' : 'MonitorTool',
             'cn' : '规则引擎监控工具'
             },
+        'title2' : {
+            'en' : 'MonitorTool',
+            'cn' : '拉孚监控工具'
+            },
         'version' : {
             'en' : 'Version',
             'cn' : '版本'
@@ -67,8 +71,12 @@ strings = {
             'cn' : '终止'
             },
         'connect' : {
-            'en' : 'Connect',
-            'cn' : '连接'
+            'en' : 'HB',
+            'cn' : '智家'
+            },
+        'connect2' : {
+            'en' : 'Larfe',
+            'cn' : '拉孚'
             },
         'connErr' : {
             'en' : 'Connect Error',
@@ -113,6 +121,22 @@ strings = {
         'logOutput' : {
             'en' : 'Log Output',
             'cn' : '日志输出'
+            },
+        'logFtpAddress' : {
+            'en' : 'Log Ftp Server',
+            'cn' : 'FTP服务器:'
+            },
+        'logFtpUser' : {
+            'en' : 'Log Ftp Username',
+            'cn' : 'FTP用户名:'
+            },
+        'logFtpPassword' : {
+            'en' : 'Log Ftp Paassword',
+            'cn' : 'FTP密码:'
+            },
+        'logFileSize' : {
+            'en' : 'Log File Size',
+            'cn' : '日志大小:'
             },
         'ruleCtrl' : {
             'en' : 'Rule Control',

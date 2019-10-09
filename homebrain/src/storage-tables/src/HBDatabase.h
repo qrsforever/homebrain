@@ -10,7 +10,6 @@
 #define __HBDatabase_H__
 
 #include "SQLiteDatabase.h"
-#include "Mutex.h"
 #include "Object.h"
 
 #include <string>
@@ -42,10 +41,9 @@ public:
     template <typename T> bool queryBy(std::vector<T> &infos, const std::string &key);
 
 private:
-    std::string mDBPath = "engine.db";
-    int mAutoCloseInterval = 15000; /* ms */
-    UTILS::Mutex mMutex; /* make sure: a mutex operation */
-    UTILS::SQLiteDatabase *mDB = 0;
+    std::string mDBPath;
+    int mAutoCloseInterval;
+    UTILS::SQLiteDatabase *mDB;
 }; /* class HBDatabase */
 
 HBDatabase& mainDB();

@@ -15,6 +15,13 @@
 #include "MessageQueue.h"
 #include "MessageLooper.h"
 
+/* Log Message Type */
+#define MT_LOG  0
+
+#define LOG_EVENT_FILE_CREATE 1
+#define LOG_EVENT_FILE_READY  2
+#define LOG_EVENT_FILE_UPLOAD 3
+
 #ifdef USE_SHARED_PTR
 #include <memory>
 #endif
@@ -56,6 +63,7 @@ public:
     void removeMessages(int what, int arg1, int arg2);
 
     bool hasMessages(int what);
+    bool hasMessages(int what, int arg1, int arg2);
 
 #ifdef USE_SHARED_PTR
     Message *obtainMessage(int what, std::shared_ptr<Object> obj);

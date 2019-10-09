@@ -17,7 +17,7 @@ var Devices = function(ui) {
 }
 
 Devices.prototype.initUI = function() {
-    console.log("Devices initUI");
+    // console.log("Devices initUI");
     that_d.devs = [];
     that_d.ui.showLoadingIndicator("DEVICES LOADING...");
     that_d.list(function(devs) {
@@ -79,7 +79,7 @@ Devices.prototype.updateValue = function(did, prop, value) {
 }
 
 Devices.prototype.buildDevices = function(devs) {
-    console.log("buildDevices");
+    // console.log("buildDevices");
     var body = document.getElementById("body-devices");
     var intro = document.getElementById("introduction-devices");
     var html = "";
@@ -95,7 +95,7 @@ Devices.prototype.buildDevices = function(devs) {
         html += '        <button';
         html += '            id="' + did + '_iconbutton"';
         html += '            class="iconselection-button"';
-        html += '            onclick="onDeleteDevice(\'' + did + '\')"';
+        html += '            onclick="ui.notImplAlert(\'' + did + '\')"';
         html += '        >';
         html += '            <img';
         html += '                id="' + did + '_icon"';
@@ -105,7 +105,7 @@ Devices.prototype.buildDevices = function(devs) {
         html += '            />';
         html += '        </button>';
         html += '        <div class="device-list-item-header-rest">';
-        html +=             that_d.buildDeviceHeader(did, tid, devs[did].label);
+        html +=             that_d.buildDeviceHeader(did, tid, devs[did].label, devs[did].alias);
         html += '        </div>';
         html += '    </div>';
         html += '    <div';
@@ -126,12 +126,25 @@ Devices.prototype.buildDevices = function(devs) {
     }
 }
 
-Devices.prototype.buildDeviceHeader = function(did, tid, label) {
+Devices.prototype.buildDeviceHeader = function(did, tid, label, alias) {
     var iconClass = that_d.expandStates[did] == true ? "close-icon" : "open-icon";
     var html = '';
-    html += ' <div class="device-list-item-header-title">';
-    html += '     <label id="' + did + '"> <span>' + did + ' ' + label + '</span></label>';
-    html += ' </div>';
+	html += '<div class="device-list-item-header-title">';
+    if (alias != 'null')
+        html += buildInlineTextEdit(did, alias, "onChangeName('" + did + "', value)");
+    else
+        html += buildInlineTextEdit(did, did + ' ' + label, "onChangeName('" + did + "', value)");
+    html += '</div>';
+    if (that_d.devs[did].isonline != "true") {
+        html += ' <button';
+        html += '     class="default-icon-button list-icon-button offline-icon"';
+        html += '     disabled=true';
+        html += ' />';
+    }
+    html += ' <button';
+    html += '     class="default-icon-button list-icon-button reset-icon"';
+    html += '     onclick="onDeleteDevice(\'' + did + '\')"';
+    html += ' ></button>';
     html += ' <button';
     html += '     class="default-icon-button list-icon-button trash-icon"';
     html += '     onclick="onUnbindDevice(\'' + did + '\')"';
@@ -145,8 +158,8 @@ Devices.prototype.buildDeviceHeader = function(did, tid, label) {
 }
 
 Devices.prototype.buildDeviceBody = function(did, tid, leftHtmlCallback, rightHtmlCallback) {
-    console.log("Devices build body");
-    var flag = leftHtmlCallback == null;
+    // console.log("Devices build body");
+    var noleft = leftHtmlCallback == null;
     that_d.updateValueSlot[did] = new Array();
     var profile = that_d.prfs[tid]["profile"];
     var html = "";
@@ -156,7 +169,7 @@ Devices.prototype.buildDeviceBody = function(did, tid, leftHtmlCallback, rightHt
             continue;
         let key = did + "_" + propName;
         html += '<div class="device-list-item-property">';
-        html +=      flag ? "" : leftHtmlCallback(did, propName);
+        html +=      noleft ? "" : leftHtmlCallback(did, propName, profile[propName]);
         html += '    <div class="device-list-item-property-title">';
         html +=         profile[propName]['tag'];
         html += '    </div>';
@@ -236,41 +249,39 @@ Devices.prototype.buildDeviceBody = function(did, tid, leftHtmlCallback, rightHt
                     that_d.updateValueSlot[did][propName] = updateElementValue;
                 break;
             default:
-                html += that_d.buildDefaultPropertyView(did, propName, profile[propName], flag);
+                html += that_d.buildDefaultPropertyView(did, propName, profile[propName], noleft);
                 break;
         }
         html += '    </div>';
-        html +=      rightHtmlCallback == null ? "" : rightHtmlCallback(did, propName, profile[propName]['type']);
+        html +=      rightHtmlCallback == null ? "" : rightHtmlCallback(did, propName, profile[propName]);
         html += '</div>';
     }
     html += '</div>';
     return html;
 }
 
-Devices.prototype.buildDefaultPropertyView = function(did, propName, resObj, flag) {
-    console.log("Devices buildDevicePropertyView");
+Devices.prototype.buildDefaultPropertyView = function(did, propName, resObj, noleft) {
+    // console.log("Devices buildDevicePropertyView %s", did);
     var key = did + "_" + propName;
     var html = "";
     switch(resObj['type']) {
         case 'enum':
-            if (flag && resObj['write'] === 'F') {
-            } else {
-                html += '        <select id="' + key + '"';
-                html += '            class="property-control property-control-selection"';
-                html += '            onchange="onChangeProperty(\'' + did + '\', \'' + propName + '\', this.value)"';
-                html += '        >';
-                for (var it in resObj['range'])
-                    html += '        <option value="' + it + '">' + resObj['range'][it] + '</option>';
-                html += '        </select>';
-                if (!that_d.updateValueSlot[did][propName])
-                    that_d.updateValueSlot[did][propName] = updateElementValue;
-            }
+            html += '        <select id="' + key + '"';
+            html += '            class="property-control property-control-selection"';
+            if (!noleft || resObj['write'] === 'T')
+                html += '        onchange="onChangeProperty(\'' + did + '\', \'' + propName + '\', this.value)"';
+            html += '        >';
+            for (var it in resObj['range'])
+                html += '        <option value="' + it + '">' + resObj['range'][it] + '</option>';
+            html += '        </select>';
+            if (!that_d.updateValueSlot[did][propName])
+                that_d.updateValueSlot[did][propName] = updateElementValue;
             break;
         case 'boolean':
-            if (flag && resObj['write'] === 'F') {
+            if (noleft && resObj['write'] === 'F') {
                 html += '        <span id="' + key + '"></span>';
                 if (!that_d.updateValueSlot[did][propName])
-                    that_d.updateValueSlot[did][propName] = updateElementValue;
+                    that_d.updateValueSlot[did][propName] = updateElementText;
             } else {
                 html += '        <input id="' + key + '"';
                 html += '            type="checkbox"';
@@ -280,19 +291,23 @@ Devices.prototype.buildDefaultPropertyView = function(did, propName, resObj, fla
                 if (!that_d.updateValueSlot[did][propName]) {
                     that_d.updateValueSlot[did][propName] = function(key, value) {
                         var inputElement = document.getElementById(key);
-                        if (inputElement)
-                            inputElement.checked = !!value;
+                        if (inputElement) {
+                            if (value == '0')
+                                inputElement.checked = false;
+                            else
+                                inputElement.checked = true;
+                        }
                     };
                 }
             }
             break;
         case 'int':
-            if (flag && resObj['write'] === 'F') {
+            if (noleft && resObj['write'] === 'F') {
                 html += '        <span id="' + key + '"></span>';
                 if (!that_d.updateValueSlot[did][propName])
                     that_d.updateValueSlot[did][propName] = updateElementText;
             } else {
-                var intReg = /v\s*>[=]\s*(\d+)\s*and\s*v\s*<[=]\s*(\d+)/g;
+                var intReg = /v\s*>[=]\s*(-?\d+)\s*and\s*v\s*<[=]\s*(-?\d+)/g;
                 var result = intReg.exec(resObj['range']);
                 html += '        <input type="range" id="' + key + '"';
                 html += '            class="property-control property-control-slider"';
@@ -350,6 +365,13 @@ Devices.prototype.updateSaturationSliderBG = function (did, hueValue, hueMax) {
     var gradient = "linear-gradient(to right, white , " + color + ")";
     if (inputElement)
         inputElement.style.background = gradient;
+}
+
+Devices.prototype.changeName = function(did, value) {
+    // console.log(value);
+    that_d.rename(did, value, function(result) {
+        sendMessage(events.SHOW_DEVICES);
+    });
 }
 
 Devices.prototype.discovery = function() {
@@ -521,6 +543,7 @@ Devices.prototype.delete = function(did) {
                 that_d.initUI();
                 return;
             }
+            that_d.ui.buildGenericErrorModal("device delete", "status return not ok");
         } catch (err) {
             console.log(err);
             that_d.ui.buildGenericErrorModal();
@@ -537,7 +560,7 @@ Devices.prototype.profile = function(tid, finishCallback) {
             that_d.ui.buildGenericErrorModal();
             return;
         }
-        console.log("request %s:%s", uri, responseText);
+        // console.log("request %s:%s", uri, responseText);
         try {
             responseData = JSON.parse(responseText);
             if (responseData["status"] == global.RES_STATUS_OK) {
@@ -602,6 +625,26 @@ Devices.prototype.operate = function(did, name, value) {
     });
 }
 
-Devices.prototype.changeName = function(did, value) {
-    console.log("Device change device name.");
+Devices.prototype.rename = function(did, value, finishCallback) {
+    var uri = "/api/familydevice/rename";
+    var body = '{"deviceId":"' + did + '","newName":"' + value + '"}';
+    httpRequest("POST", uri, body, function(responseText, error) {
+        if (error && error.status != 200) {
+            console.log(error);
+            that_d.ui.buildGenericErrorModal();
+            return;
+        }
+        // console.log("request %s:%s", uri, responseText);
+        try {
+            responseData = JSON.parse(responseText);
+            if (responseData["status"] == global.RES_STATUS_OK) {
+                if (finishCallback)
+                    finishCallback(responseData['result']);
+                return;
+            }
+            that_r.ui.buildGenericErrorModal(
+                    responseData["errors"]["code"],
+                    responseData["errors"]["message"]);
+        } catch (err) { console.log(err); }
+    });
 }

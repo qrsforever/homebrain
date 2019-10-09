@@ -9,9 +9,7 @@ Import('env')
 mqtt_env = env.Clone()
 
 top_dir = env.get('SRC_DIR')
-platform = os.environ.get("PROJECT_PRLATFORM")
 
-# mqtt_dir = os.path.join(top_dir, 'out', platform, 'extlibs/mqtt', 'paho.mqtt.embedded-c-1.1.0')
 mqtt_dir = 'paho.mqtt.embedded-c-1.1.0'
 mqtt_src_dir = os.path.join(mqtt_dir, 'MQTTPacket/src')
 

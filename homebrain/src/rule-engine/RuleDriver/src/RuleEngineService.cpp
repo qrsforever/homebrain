@@ -11,6 +11,7 @@
 #include "InstancePayload.h"
 #include "ClassPayload.h"
 #include "RulePayload.h"
+#include "NotifyPayload.h"
 #include "StringData.h"
 #include "StringArray.h"
 #include "Message.h"
@@ -21,6 +22,16 @@
 #include <unistd.h>
 
 #define RULE_DB_NAME "ruleengine.db"
+
+#define RE_WaitResult(data) \
+    do { \
+        for (int i = 0; i < 5; ++i) { \
+            if (data->mMagic == 99) \
+                return true; \
+            usleep(20000); \
+        } \
+        return false; \
+    } while(0)
 
 namespace HB {
 
@@ -55,39 +66,14 @@ void RuleEngineService::setDeviceChannel(std::shared_ptr<DataChannel> channel)
     mClassChannel = channel;
 }
 
-int RuleEngineService::init(const std::vector<DeviceTableInfo> &devices, const std::vector<RuleTableInfo> &rules, bool urgent)
+void RuleEngineService::setNotifyChannel(std::shared_ptr<DataChannel> channel)
 {
-    /*
-    mStore = std::make_shared<RuleEngineStore>(mServerRoot + "/" + RULE_DB_NAME);
-    mTimer = std::make_shared<RuleEngineTimer>(ruleHandler());
+    mNotifyChannel = channel;
+}
 
-    size_t i,j;
-    int eID;
-    bool wflg;
-    std::vector<std::string> eIDs;
-    TimerEventInfo eInfo;
-    std::vector<DefRuleInfo> ruleInfos = store()->queryRuleInfos();
-    for (i = 10; i < ruleInfos.size(); ++i) {
-        eIDs = stringSplit(ruleInfos[i].mTimers, ";");
-        for (j = 0; j < eIDs.size(); ++j) {
-            eID = atoi(eIDs[i].c_str());
-            if (!store()->queryTimerEvent(eID, eInfo))
-                continue;
-            wflg = eInfo.mWeek.empty() ? true : false;
-            TimerEvent::pointer tePtr = std::make_shared<TimerEvent>(eID, wflg);
-            tePtr->year()->resetFromString(eInfo.mYear);
-            tePtr->month()->resetFromString(eInfo.mMonth);
-            if (wflg)
-                tePtr->week()->resetFromString(eInfo.mWeek);
-            else
-                tePtr->day()->resetFromString(eInfo.mDay);
-            tePtr->hour()->resetFromString(eInfo.mHour);
-            tePtr->minute()->resetFromString(eInfo.mMinute);
-            tePtr->second()->resetFromString(eInfo.mSecond);
-            timer()->addEvent(ruleInfos[i].mDefName, tePtr);
-        }
-    }
-    */
+int RuleEngineService::init(const std::map<std::string, std::string> &devices,
+    const std::map<std::string, std::string> &rules, bool urgent)
+{
 
     /*{{{ normal rule trigger */
     ruleHandler().mCallback = this;
@@ -117,21 +103,16 @@ int RuleEngineService::init(const std::vector<DeviceTableInfo> &devices, const s
         mRuleChannel->init();
     if (mClassChannel)
         mClassChannel->init();
+    if (mNotifyChannel)
+        mNotifyChannel->init();
 
-    for (size_t i = 0; i < devices.size(); ++i) {
-        mCoreForNormal->handleClassSync(
-            devices[i].nDeviceType.c_str(),
-            devices[i].nScriptData.c_str());
-    }
+    for (auto it = devices.begin(); it != devices.end(); ++it)
+        mCoreForNormal->handleClassSync(it->first.c_str(), it->second.c_str());
 
-    /* build rule */
-    for (size_t i = 0; i < rules.size(); ++i) {
-        mCoreForNormal->handleRuleSync(
-            rules[i].nRuleId.c_str(),
-            rules[i].nScriptData.c_str());
-    }
-    // mCoreForNormal->reset(); // TODO call this will unkown crash
-    ruleHandler().sendEmptyMessage(RET_REFRESH_TIMER);
+    for (auto it = rules.begin(); it != rules.end(); ++it)
+        mCoreForNormal->handleRuleSync(it->first.c_str(), it->second.c_str());
+
+    mCoreForNormal->reset();
     return 0;
 }
 
@@ -385,8 +366,13 @@ bool RuleEngineService::callInstancePush(std::string insName, std::string slot, 
 
 bool RuleEngineService::callContentPush(std::string id, std::string title, std::string content)
 {
-    RE_LOGW("(%s, %s, %s)\n", id.c_str(), title.c_str(), content.c_str());
-    return true; /* synchronous */
+    RE_LOGI("(%s, %s, %s)\n", id.c_str(), title.c_str(), content.c_str());
+    std::shared_ptr<NotifyPayload> payload = std::make_shared<NotifyPayload>();
+    payload->mID = id;
+    payload->mTitle = title;
+    payload->mContent = content;
+    mNotifyChannel->send(PT_NOTIFY_PAYLOAD, payload);
+    return true;
 }
 
 bool RuleEngineService::triggerRule(const std::string &ruleId, bool sync)
@@ -396,14 +382,8 @@ bool RuleEngineService::triggerRule(const std::string &ruleId, bool sync)
     assert.append("(rule ").append(innerOfRulename(ruleId)).append(")");
     std::shared_ptr<StringData> data = std::make_shared<StringData>(assert.c_str());
     ruleHandler().sendMessage(ruleHandler().obtainMessage(RET_ASSERT_FACT, 0, 99, data));
-    if (sync) {
-        for (int i = 0; i < 5; ++i) {
-            if (data->mMagic == 99)
-                return true;
-            usleep(20000);
-        }
-        return false;
-    }
+    if (sync)
+        RE_WaitResult(data);
     return true;
 }
 
@@ -414,14 +394,8 @@ bool RuleEngineService::enableRule(const std::string &ruleId, const std::string 
     data->put(0, innerOfRulename(ruleId).c_str());
     data->put(1, script.c_str());
     ruleHandler().sendMessage(ruleHandler().obtainMessage(RET_SWITCH_RULE, ENUM_ENABLE, 99, data));
-    if (sync) {
-        for (int i = 0; i < 5; ++i) {
-            if (data->mMagic == 99)
-                return true;
-            usleep(20000);
-        }
-        return false;
-    }
+    if (sync)
+        RE_WaitResult(data);
     return true;
 }
 
@@ -430,15 +404,28 @@ bool RuleEngineService::disableRule(const std::string &ruleId, bool sync)
     RE_LOGI("(%s)\n", ruleId.c_str());
     std::shared_ptr<StringData> data = std::make_shared<StringData>(innerOfRulename(ruleId).c_str());
     ruleHandler().sendMessage(ruleHandler().obtainMessage(RET_SWITCH_RULE, ENUM_DISABLE, 99, data));
-    if (sync) {
-        for (int i = 0; i < 5; ++i) {
-            if (data->mMagic == 99)
-                return true;
-            usleep(20000);
-        }
-        return false;
-    }
+    if (sync)
+        RE_WaitResult(data);
     return true;
+}
+
+bool RuleEngineService::assertRule(const std::string &assert, bool sync)
+{
+    RE_LOGI("(%s)\n", assert.c_str());
+    std::shared_ptr<StringData> data = std::make_shared<StringData>(assert.c_str());
+    ruleHandler().sendMessage(ruleHandler().obtainMessage(RET_ASSERT_FACT, 0, 99, data));
+    if (sync)
+        RE_WaitResult(data);
+    return true;
+}
+
+bool RuleEngineService::executeScene(const std::string &sceneName, const std::string &defroom, bool sync)
+{
+    RE_LOGI("switch scene: (%s %s)\n", defroom.c_str(), sceneName.c_str());
+    std::string switchScene;
+    switchScene.append("(switch-scene ").append(defroom);
+    switchScene.append(" ").append(sceneName).append(")");
+    return assertRule(switchScene, sync);
 }
 
 std::vector<std::string> RuleEngineService::callGetFiles(int /*fileType*/, bool /*urgent*/)

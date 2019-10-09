@@ -17,11 +17,15 @@
 #include "MicroHttpHandler.h"
 #include "DeviceDataChannel.h"
 #include "CloudDataChannel.h"
+#include "NotifyDataChannel.h"
 #include "HBHelper.h"
 #include "HBDatabase.h"
 #include "HBGlobalTable.h"
 #include "RuleEngineTable.h"
+#include "SceneEngineTable.h"
 #include "DeviceProfileTable.h"
+
+#include "GatewayAgent.h"
 
 #include "MainPublicHandler.h"
 #ifdef ENABLE_MONITOR_TOOL
@@ -56,17 +60,16 @@ public:
             mDevChnnl->statusChanged(deviceId, deviceType, 3);
         else if (status == HB_DEVICE_STATUS_UNKOWN_ERROR)
             mDevChnnl->statusChanged(deviceId, deviceType, 4);
-        cloudManager().statusReport(deviceId, deviceType, status);
+        /* cloudManager().statusReport(deviceId, deviceType, status); */
     }
 
     void onDevicePropertyChanged(const std::string deviceId, const std::string propertyKey, std::string value) {
-        if ((propertyKey == "temperature") || (propertyKey == "humidity"))
-            return;
         mDevChnnl->propertyChanged(deviceId, propertyKey, value);
 
-        std::string deviceType;
-        deviceManager().GetDevicesTypeById(deviceId, deviceType);
-        cloudManager().propertyReport(deviceId, deviceType, propertyKey, value);
+        /* std::string deviceType;
+         * deviceManager().GetDevicesTypeById(deviceId, deviceType);
+         * cloudManager().propertyReport(deviceId, deviceType, propertyKey, value); */
+
         /* if (propertyKey == "illuminate") {
          *     int around = atoi(value.c_str());
          *     if (s_illuminate == around)
@@ -98,6 +101,15 @@ public:
 void InitThread::run()
 {
     printf("\n-----------Init Thread:[%u]---------\n", (unsigned int)pthread_self());
+
+    /*-----------------------------------------------------------------
+     *  log, attach
+     *-----------------------------------------------------------------*/
+    
+    // disableLogPool();
+    LogPool::getInstance().attachFilter(
+        new LogFile(&mainHandler(), gRootDir.c_str(), 5120000));
+
     std::string clipsDir("clips");
     std::string deviceDir("devices/profiles");
 
@@ -115,17 +127,37 @@ void InitThread::run()
         setModuleLogLevel(logs[i].nModule.c_str(), logs[i].nLevel);
 
     /* query devices and set */
+    std::map<std::string, std::string> mapDevices;
     std::vector<DeviceTableInfo> devices;
     mainDB().queryBy(devices, DeviceTableInfo());
+    for (size_t i = 0; i < devices.size(); ++i) {
+        mapDevices.insert(std::pair<std::string, std::string>(
+                devices[i].nDeviceType,
+                devices[i].nScriptData));
+    }
 
     /* query rules and set */
+    std::map<std::string, std::string> mapRules;
     std::vector<RuleTableInfo> rules;
     RuleTableInfo filter;
     filter.nEnable = 1;
     mainDB().queryBy(rules, filter);
+    for (size_t i = 0; i < rules.size(); ++i) {
+        mapRules.insert(std::pair<std::string, std::string>(
+                rules[i].nRuleId,
+                rules[i].nScriptData));
+    }
+    rules.clear();
 
-    /* init cloud mananger here */
-    cloudManager();
+    /* query scenes and set */
+    std::vector<SceneTableInfo> scenes;
+    mainDB().queryBy(scenes, SceneTableInfo());
+    for (size_t i = 0; i < scenes.size(); ++i) {
+        mapRules.insert(std::pair<std::string, std::string>(
+                scenes[i].nSceneId,
+                scenes[i].nScriptData));
+    }
+    scenes.clear();
 
     /*-----------------------------------------------------------------
      *  Rule Engine module init
@@ -133,7 +165,13 @@ void InitThread::run()
     std::shared_ptr<DeviceDataChannel> deviceChnnl = std::make_shared<ElinkDeviceDataChannel>();
     ruleEngine().setServerRoot(clipsDir);
     ruleEngine().setDeviceChannel(deviceChnnl);
-    ruleEngine().init(devices, rules);
+    ruleEngine().setNotifyChannel(std::make_shared<NotifyDataChannel>());
+    ruleEngine().init(mapDevices, mapRules);
+    mapDevices.clear();
+    mapRules.clear();
+
+    /* init cloud mananger here */
+    /* cloudManager(); */
 
     /*-----------------------------------------------------------------
      *  Http Handler init
@@ -178,14 +216,14 @@ int main(int argc, char *argv[])
         }
     }
 
+    char currdir[128];
+    gRootDir.assign(getcwd(currdir, sizeof(currdir)));
+
     /*-----------------------------------------------------------------
      *  1. init log module
      *-----------------------------------------------------------------*/
     initLogThread();
     setLogLevel(LOG_LEVEL_TRACE);
-    // disableLogPool();
-
-    /* LogPool::getInstance().attachFilter(new LogFile()); */
 
     /*-----------------------------------------------------------------
      *  2. init main module

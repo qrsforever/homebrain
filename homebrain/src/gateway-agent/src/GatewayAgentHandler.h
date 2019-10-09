@@ -11,12 +11,10 @@
 
 #include "MessageHandler.h"
 
-#define UNITTEST 0
-
 #define GA_NETWORK_OK           1
-#define GA_CONNECT_AGAIN        2
-
-#define GA_UNITTEST            99
+#define GA_NETWORK_ERR          2
+#define GA_CONNECT_MQTT         3
+#define GA_CONNECT_AGAIN        4
 
 #ifdef __cplusplus
 
@@ -26,10 +24,7 @@ class GatewayAgentHandler : public ::UTILS::MessageHandler {
 protected:
     void handleMessage(::UTILS::Message *msg);
 private:
-
-#if UNITTEST
-    void doUnitTest(::UTILS::Message *msg);
-#endif
+    ::UTILS::MessageHandler *mH;
 }; /* class GatewayAgentHandler */
 
 GatewayAgentHandler& GAHandler();

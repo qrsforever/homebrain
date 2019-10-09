@@ -27,6 +27,8 @@ public:
     template <typename T>
     bool updateOrInsert(const T &/*info*/) { return false; }
 
+    virtual void dump() { };
+
 private:
     bool _Update(int currentVersion, int latestVersion);
 

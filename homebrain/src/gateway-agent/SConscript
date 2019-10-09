@@ -3,22 +3,32 @@
 ##
 
 import os
-Import('homebrain_env')
+Import('env')
 
-gw_agent_env = homebrain_env.Clone()
+export_ga_sdk = 1
+
+gw_agent_env = env.Clone()
 
 gw_agent_env.AppendUnique(CPPPATH = [
     os.path.join(gw_agent_env.get('BUILD_DIR'), 'include'),
+    '#/extlibs/rapidjson/rapidjson/include',
+    '#homebrain/src/utils/Log/src',
     ])
 
+if not export_ga_sdk:
+    gw_agent_env.AppendUnique(CPPPATH = [
+    '#homebrain/src/utils/Log/src',
+    ])
+else:
+    gw_agent_env.AppendUnique(CPPDEFINES = ['GA_EXPORT_SDK'])
 
 gw_agent_env.AppendUnique(CXXFLAGS = [
-    '-DMQTT_CLIENT',
+    '-fpermissive',
+    '-Wno-error',
 ])
 
 gw_agent_src = [
     'src/GatewayAgent.cpp',
-    'src/GatewayAgentHandler.cpp',
     'src/GatewayAgentLog.cpp',
     'src/mqtt/MQTTClient.c',
     'src/mqtt/MQTTLinux.c',
@@ -28,5 +38,11 @@ gw_agent_env.AppendUnique(LIBS=[
     'MQTTPacketClient'
 ])
 
+static_libgw_agent = gw_agent_env.StaticLibrary('gateway_agent', gw_agent_src)
+gw_agent_env.InstallTarget(static_libgw_agent, 'gateway_agent')
+
 libgw_agent = gw_agent_env.SharedLibrary('HB_GWAgent', gw_agent_src)
 gw_agent_env.InstallTarget(libgw_agent , 'HB_GWAgent')
+
+gw_agent_env.UserInstallTargetHeader(['src/GatewayAgent.h'], '', '')
+gw_agent_env.UserInstallTargetHeader(['src/mqtt/MQTTLinux.h', 'src/mqtt/MQTTClient.h'], 'mqtt', '')

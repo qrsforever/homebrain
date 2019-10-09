@@ -9,21 +9,19 @@
 #include "GatewaysAPI.h"
 #include "MicroHttpHandler.h"
 #include "MicroLogHandler.h"
+#include "Common.h"
 #include "HBHelper.h"
 #include "HBDatabase.h"
 #include "GatewayConnectTable.h"
 
 #include "rapidjson/document.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
 
 #include <fstream>
 #include <sstream>
 #include <map>
 
 using namespace rapidjson;
-// using namespace UTILS;
-// using namespace OIC::Service::HB;
+using namespace UTILS;
 
 namespace HB {
 
@@ -38,6 +36,7 @@ static std::map<int, const char*> gErrorCodes {/*{{{*/
     {-1202, "gateway remove inner error, not found gid from db"},
     {-1301, "gateway status inner error"},
     {-1401, "gateway net inner error"},
+    {-1501, "gateway enable inner error"},
 };/*}}}*/
 
 class GatewayStatusResult {/*{{{*/
@@ -206,6 +205,8 @@ static void _status(const crow::request& req, crow::response& res)
         case HB_GATEWAY_STATUS_READY:
             val.assign("2");
             break;
+        default:
+            break;
     }
     std::string result;
     result.append("\"result\":{\"status\":").append("\"").append(val).append("\"}");
@@ -224,7 +225,9 @@ static void _list(const crow::request& req, crow::response& res)
         result.append("{\"ownedStatus\":").append("\"").append("HB_binded").append("\",");
         result.append("\"gatewayType\":").append("\"").append(infos[i].nType).append("\",");
         result.append("\"gatewayId\":").append("\"").append(infos[i].nGid).append("\",");
-        result.append("\"accessKey\":").append("\"").append(infos[i].nKey).append("\"}");
+        result.append("\"accessKey\":").append("\"").append(infos[i].nKey).append("\",");
+        result.append("\"gatewayIp\":").append("\"").append(infos[i].nIp).append("\",");
+        result.append("\"enable\":").append("\"").append(int2String(infos[i].nEnable)).append("\"}");
     }
     result.append("]");
     status.setStatusCode(0, result);
@@ -256,7 +259,58 @@ static void _net(const crow::request& req, crow::response& res)
     }
     std::string result("\"result\":{");
     result.append("\"ret\":").append("\"").append("success").append("\",");
-    result.append("\"maxDuration\":").append("\"5\"").append("}");
+    result.append("\"maxDuration\":").append("\"30\"").append("}");
+    status.setStatusCode(0, result);
+}/*}}}*/
+
+static void _enable(const crow::request& req, crow::response& res)
+{/*{{{*/
+    GatewayStatusResult status(req, res);
+
+    Document doc;
+    doc.Parse(req.body.c_str());
+
+    if (doc.HasParseError()) {
+        status.setStatusCode(-1002);
+        return;
+    }
+
+    Value& gatewayId = doc["gatewayId"];
+    if (!gatewayId.IsString()) {
+        status.setStatusCode(-1002);
+        return;
+    }
+
+    Value& enable = doc["enable"];
+    if (!enable.IsString()) {
+        status.setStatusCode(-1002);
+        return;
+    }
+
+    std::vector<GatewayTableInfo> infos;
+    mainDB().queryBy(infos, GatewayTableInfo(gatewayId.GetString()));
+    if (infos.size() != 1) {
+        status.setStatusCode(-1501);
+        return;
+    }
+    infos[0].nEnable = atoi(enable.GetString());
+    mainDB().updateOrInsert(infos[0]);
+
+    if (infos[0].nEnable)
+        startBridge(infos[0].nType.c_str(), infos[0].nGid.c_str(), infos[0].nKey.c_str(), infos[0].nIp.c_str());
+    else
+        killBridge(infos[0].nGid.c_str());
+
+    std::string result;
+    result.append("\"result\":{\"status\":\"0\"}");
+    status.setStatusCode(0, result);
+}/*}}}*/
+
+static void _refresh(const crow::request& req, crow::response& res)
+{/*{{{*/
+    GatewayStatusResult status(req, res);
+    std::string result;
+    result.append("\"result\":{\"status\":\"0\"}");
     status.setStatusCode(0, result);
 }/*}}}*/
 
@@ -267,6 +321,8 @@ extern void initGatewaysAPI(APP& app)
     CROW_ROUTE(app, "/api/gateway/status").methods(REST_POST)(_status);
     CROW_ROUTE(app, "/api/gateway/list").methods(REST_POST)(_list);
     CROW_ROUTE(app, "/api/gateway/net").methods(REST_POST)(_net);
+    CROW_ROUTE(app, "/api/gateway/enable").methods(REST_POST)(_enable);
+    CROW_ROUTE(app, "/api/gateway/refresh").methods(REST_POST)(_refresh);
 }
 
 } /* namespace HB */

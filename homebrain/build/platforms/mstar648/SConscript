@@ -10,3 +10,10 @@ top_dir = env.get('SRC_DIR')
 
 ## Build MQTT
 SConscript(os.path.join(top_dir, 'out/mstar648/extlibs/mqtt', 'SConscript'))
+
+SConscript('#extlibs/boost/SConscript')
+SConscript('#extlibs/sqlite3/SConscript')
+SConscript('#extlibs/tinycbor/SConscript')
+SConscript('#extlibs/cjson/SConscript')
+SConscript('#extlibs/uuid/SConscript')
+SConscript('#extlibs/libcurl/SConscript')

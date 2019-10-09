@@ -16,9 +16,11 @@
 #include "HBDatabase.h"
 #include "HBDeviceManager.h"
 #include "HBHelper.h"
+#include "CurlEasy.h"
+#include "Common.h"
 
-#include "GatewayAgentHandler.h"
 #include "GatewayConnectTable.h"
+#include "HBGlobalTable.h"
 
 #ifdef ENABLE_MONITOR_TOOL
 #include "MonitorTool.h"
@@ -49,6 +51,39 @@ MainPublicHandler::~MainPublicHandler()
 
 }
 
+void MainPublicHandler::onLogEvent(Message *msg)
+{
+    switch (msg->arg1) {
+        case LOG_EVENT_FILE_CREATE:
+            break;
+        case LOG_EVENT_FILE_READY:
+            if (msg->obj) {
+                std::string filename;
+#ifdef USE_SHARED_PTR
+                std::shared_ptr<StringData> data(std::dynamic_pointer_cast<StringData>(msg->obj));
+#else
+                StringData *data = dynamic_cast<StringData*>(msg->obj);
+#endif
+                if (data)
+                    filename.assign(data->getData());
+                std::vector<SmartHomeInfo> infos;
+                mainDB().queryBy(infos, LOG_FTP_FIELD);
+                if (infos.size() == 1) {
+                    std::vector<std::string> params = UTILS::stringSplit(infos[0].nValue, "^");
+                    if (params.size() == 3) {
+                        LOGD("ftp upload\n");
+                        //TODO need do this in another thread.
+                        easyPut(params[0].c_str(), filename.c_str(), params[1].c_str(), params[2].c_str());
+                    }
+                }
+                unlink(filename.c_str());
+            }
+            break;
+        default:
+            ;
+    }
+}
+
 void MainPublicHandler::doNetworkSuccess()
 {
     /* query bridge and start */
@@ -60,9 +95,6 @@ void MainPublicHandler::doNetworkSuccess()
         startBridge(bridges[i].nType.c_str(), bridges[i].nGid.c_str(),
             bridges[i].nKey.c_str(), bridges[i].nIp.c_str());
     }
-
-    /* start homebrain super gateway */
-    GAHandler().sendEmptyMessage(GA_NETWORK_OK);
 }
 
 void MainPublicHandler::onNetworkEvent(Message *msg)
@@ -104,18 +136,13 @@ void MainPublicHandler::onMonitorEvent(Message *msg)
 }
 #endif
 
-#ifdef SIM_SUITE
-void MainPublicHandler::onSimulateEvent(Message *msg)
-{
-    /* TODO only for test */
-    tempSimulateTest(msg);
-}
-#endif
-
 void MainPublicHandler::handleMessage(Message *msg)
 {
     LOGD("msg: [%d] [%d] [%d]\n", msg->what, msg->arg1, msg->arg2);
     switch (msg->what) {
+        case MT_LOG:
+            onLogEvent(msg);
+            break;
         case MT_NETWORK:
             onNetworkEvent(msg);
             break;
@@ -133,11 +160,6 @@ void MainPublicHandler::handleMessage(Message *msg)
             onMonitorEvent(msg);
             break;
 #endif
-#ifdef SIM_SUITE
-        case MT_SIMULATE:
-            onSimulateEvent(msg);
-            break;
-#endif
         default:
             break;
     }
@@ -146,7 +168,7 @@ void MainPublicHandler::handleMessage(Message *msg)
 MainPublicHandler& mainHandler()
 {
     if (0 == gMainHander) {
-        LOGW("check me\n");
+        LOGI("check me\n");
         gMainHander = new MainPublicHandler(gMainThread->getMessageQueue());
     }
     return *gMainHander;
@@ -158,8 +180,7 @@ int initMainThread()
 {
     if (0 == gMainThread) {
         /* TODO call this API in main thread */
-        gMainThread = new MessageLooper(pthread_self());
-        gMainHander = new MainPublicHandler();
+        gMainThread = &Looper::getMainLooper();
     }
     return 0;
 }

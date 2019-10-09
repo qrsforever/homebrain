@@ -32,9 +32,9 @@ MessageHandler::MessageHandler(): mQueue(0)
     try {
         looper = dynamic_cast<MessageLooper*>(curr);
         if (0 == looper)
-            looper = &Looper::getDefaultLooper();
+            looper = &Looper::getMainLooper();
     } catch (const std::bad_cast& e) {
-        looper = &Looper::getDefaultLooper();
+        looper = &Looper::getMainLooper();
     }
     mQueue = looper->getMessageQueue();
     mCallback = NULL;
@@ -165,6 +165,11 @@ void MessageHandler::removeAllMessages(Object *token)
 bool MessageHandler::hasMessages(int what)
 {
     return mQueue->removeMessages(this, what, NULL, false);
+}
+
+bool MessageHandler::hasMessages(int what, int arg1, int arg2)
+{
+    return mQueue->removeMessages(this, what, arg1, arg2, false);
 }
 
 #ifdef USE_SHARED_PTR

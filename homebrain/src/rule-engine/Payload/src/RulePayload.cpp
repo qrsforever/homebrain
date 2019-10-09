@@ -9,13 +9,6 @@
 #include "RulePayload.h"
 #include <string.h>
 
-#define ACT_NOTIFY_FUNC  "act-notify"
-#define ACT_SCENE_FUNC   "act-rule"
-#define ACT_CONTROL_FUNC "act-control"
-#define ACT_ASSERT_FUNC  "act-assert"
-
-#define RULE_ID_PREFIX "rul-"
-
 namespace HB {
 
 SlotPoint::SlotPoint(Condition &cond, std::string name, std::string flag)
@@ -117,6 +110,9 @@ std::string SlotPoint::toString(std::string fmt)
             str.append(" ").append(getValue(i)).append(")");
         }
         str.append(")");
+    } else if (mCond.mType == CT_SCENE) {
+        if (log == "none")
+            str.append("(").append(mSlotName).append(" ").append(getValue(0)).append(")");
     }
     return str;
 }
@@ -182,6 +178,11 @@ std::string Condition::toString(std::string fmt)
         str.append(fmt).append(")");
     } else if (mType == CT_TEMPLATE) {
         str.append("(").append(mCls);
+        for (size_t i = 0; i < slotCount(); ++i)
+            str.append(get(i)->toString(fmt + "  "));
+        str.append(fmt).append(")");
+    } else if (mType == CT_SCENE) {
+        str.append("(object (is-a ").append(mCls).append(")");
         for (size_t i = 0; i < slotCount(); ++i)
             str.append(get(i)->toString(fmt + "  "));
         str.append(fmt).append(")");
@@ -261,6 +262,7 @@ std::string LHSNode::toString(std::string fmt)
         str.append(getChild(i)->toString(fmt+indent));
     if (childCount() > 1)
         str.append(fmt).append(")");
+
     return std::move(str);
 }
 
@@ -299,6 +301,8 @@ std::string Action::toString(std::string fmt)
         str.append(" \"").append(mSlotValue).append("\"");
     } else if (mType == AT_SCENE) {
         str.append(" ").append(mSlotValue);
+    } else if (mType == AT_ASSERT) {
+        str.append(" ").append(mSlotValue);
     }
     if (mCheckResult)
         str.append(" 1");
@@ -322,13 +326,13 @@ RHSNode::~RHSNode()
 Action& RHSNode::makeAction(ActionType type, std::string value)
 {
     Action *act = 0;
-    if (type == AT_SCENE)
+    if (type == AT_SCENE) {
         act = new Action(type, ACT_SCENE_FUNC, "nil", innerOfRulename(value));
-    else
+        mSceneIds.push_back(value);
+    } else
         act = new Action(AT_ASSERT, ACT_ASSERT_FUNC, "nil", value);
     act->mCheckResult = mRule.mTimeoutMS > 0 ? true : false;
     mActions.push_back(act);
-    mSceneIds.push_back(value);
     return *act;
 }
 

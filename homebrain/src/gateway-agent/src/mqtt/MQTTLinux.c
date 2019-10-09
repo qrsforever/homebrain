@@ -162,5 +162,14 @@ int NetworkConnect(Network* n, char* addr, int port)
 
 void NetworkDisconnect(Network* n)
 {
-	close(n->my_socket);
+    if (n->my_socket > 0)
+        close(n->my_socket);
+    n->my_socket = 0;
+}
+
+uint32_t GetMSecs()
+{
+    struct timespec tp;
+    clock_gettime(CLOCK_MONOTONIC, &tp);
+    return tp.tv_sec * 1000 + tp.tv_nsec / 1000000;
 }

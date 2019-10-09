@@ -1,8 +1,9 @@
 {
     "devicetype": "oic.d.kk_envsensor",
+    "supertype": "oic.d.envsensor",
     "devicename": "控客环境传感器",
     "manufacture": "Konke",
-    "version": "0.9.2",
+    "version": "0.9.3",
     "profile": {
         "OnlineState": {
             "tag": "在线状态",
@@ -41,7 +42,7 @@
             "write": "F",
             "read": "T",
             "type": "int",
-            "range": "v >= 0 and v <= 100",
+            "range": "v >= -50 and v <= 50",
             "unit": "℃"
         }
     }
